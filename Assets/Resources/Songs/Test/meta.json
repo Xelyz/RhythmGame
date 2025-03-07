@@ -1,0 +1,13 @@
+{
+    "id": "Test",
+    "title": "Test track (1 note)",
+    "artist": "Emocosine",
+    "level": [
+        "T",
+        "",
+        "",
+        ""
+    ],
+    "previewStart": 60000,
+    "previewEnd": 70000
+}
