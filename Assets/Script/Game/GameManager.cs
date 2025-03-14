@@ -137,12 +137,14 @@ public class GameManager : MonoBehaviour
     {
         isPlaying = false;
         audioSource.Pause();
+        Time.timeScale = 0f;
         pauseButton.gameObject.SetActive(false);
         pausingPage.SetActive(true);
     }
 
     public void Restart()
     {
+        Time.timeScale = 1f;
         Util.Transition("GameScene");
     }
 
@@ -150,12 +152,14 @@ public class GameManager : MonoBehaviour
     {
         isPlaying = true;
         audioSource.Play();
+        Time.timeScale = 1f;
         pauseButton.gameObject.SetActive(true);
         pausingPage.SetActive(false);
     }
 
     public void Quit()
     {
+        Time.timeScale = 1f;
         Util.Transition("SongSelectScene");
     }
 
