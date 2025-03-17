@@ -9,8 +9,6 @@ public class SongSelection : MonoBehaviour
     public GameObject songButtonPrefab;
     public GameObject songHolder;
     public GameObject previewUI;
-    public Button startButton;
-    public Button settingButton;
 
     private Preview preview;
     private List<Meta> songList = new();
@@ -25,8 +23,17 @@ public class SongSelection : MonoBehaviour
     private void InitializeComponents()
     {
         preview = previewUI.GetComponent<Preview>();
-        startButton.onClick.AddListener(() => Util.Transition("GameScene"));
-        settingButton.onClick.AddListener(() => Util.Transition("SettingScene"));
+    }
+
+    public void StartGame()
+    {
+        PlayInfo.isTutorial = false;
+        Util.Transition("GameScene");
+    }
+
+    public void Setting()
+    {
+        Util.Transition("SettingScene");
     }
 
     private void LoadSongs()

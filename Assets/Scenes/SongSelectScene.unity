@@ -2300,8 +2300,6 @@ MonoBehaviour:
   songButtonPrefab: {fileID: 3473733298791107013, guid: 796a1648228b740e8a6f625517caaf50, type: 3}
   songHolder: {fileID: 196372743}
   previewUI: {fileID: 1291666592}
-  startButton: {fileID: 386668178}
-  settingButton: {fileID: 2144784347}
 --- !u!1 &1759490441
 GameObject:
   m_ObjectHideFlags: 0
@@ -3142,7 +3140,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1628870667}
         m_TargetAssemblyTypeName: SongSelection, Assembly-CSharp
         m_MethodName: Setting
         m_Mode: 1

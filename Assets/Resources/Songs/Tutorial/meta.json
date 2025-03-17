@@ -1,0 +1,13 @@
+{
+    "id": "Tutorial",
+    "title": "Tutorial Song",
+    "artist": "Jacob",
+    "level": [
+        "1",
+        "",
+        "",
+        ""
+    ],
+    "previewStart": 26000,
+    "previewEnd": 36000
+}
