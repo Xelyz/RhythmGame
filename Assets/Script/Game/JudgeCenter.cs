@@ -20,7 +20,7 @@ public class JudgeCenter : MonoBehaviour
 
     void Start()
     {
-        PlayStats.Clear();
+        GameStats.Clear();
 
         judgeEffectPool = new(() =>
         {
@@ -61,28 +61,28 @@ public class JudgeCenter : MonoBehaviour
             case Judgment.Perfect:
                 combo++;
                 score += 5;
-                PlayStats.perfectCount++;
+                GameStats.perfectCount++;
                 break;
             case Judgment.Good:
                 combo++;
                 score += 3;
-                PlayStats.goodCount++;
+                GameStats.goodCount++;
                 break;
             case Judgment.Bad:
                 combo = 0;
                 score += 1;
-                PlayStats.badCount++;
+                GameStats.badCount++;
                 break;
             case Judgment.Miss:
                 combo = 0;
-                PlayStats.missCount++;
+                GameStats.missCount++;
                 break;
         }
         referenceScore += 5;
 
         comboText.text = combo.ToString() + 'x';
-        PlayStats.acc = score / (float)referenceScore * 100;
-        scoreText.text = PlayStats.acc.ToString("F2") + '%';
+        GameStats.acc = score / (float)referenceScore * 100;
+        scoreText.text = GameStats.acc.ToString("F2") + '%';
     }
 
     readonly float moveDistance = 10;

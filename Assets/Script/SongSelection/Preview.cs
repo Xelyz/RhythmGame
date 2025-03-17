@@ -55,7 +55,7 @@ public class Preview : MonoBehaviour
     public void UpdatePreview(Meta meta)
     {
         title.text = meta.title;
-        PlayStats.meta = meta;
+        PlayInfo.meta = meta;
 
         // 设置封面
         jacket.sprite = jacketCache.TryGetValue(meta.id, out var sprite) ? sprite : placeholderSprite;
@@ -89,7 +89,7 @@ public class Preview : MonoBehaviour
             }
         }
 
-        Select(PlayStats.diff);
+        Select(PlayInfo.diff);
     }
 
     Tween currentTween;
@@ -110,7 +110,7 @@ public class Preview : MonoBehaviour
             return;
         }
 
-        PlayStats.diff = diff;
+        PlayInfo.diff = diff;
 
         // Get the target position from the difficulty element
         Vector3 targetPosition = diffElement[diff].transform.position;

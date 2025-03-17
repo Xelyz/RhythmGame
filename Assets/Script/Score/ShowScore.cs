@@ -22,10 +22,10 @@ public class ShowScore : MonoBehaviour
         // goodCountText.text = PlayStats.goodCount.ToString();
         // badCountText.text = PlayStats.badCount.ToString();
         // missCountText.text = PlayStats.missCount.ToString();
-        titleText.text = PlayStats.meta.title;
+        titleText.text = PlayInfo.meta.title;
         
-        accText.text = PlayStats.acc.ToString("F2") + "%";
-        rankText.text = PlayStats.acc switch
+        accText.text = GameStats.acc.ToString("F2") + "%";
+        rankText.text = GameStats.acc switch
         {
             100f => "P",
             > 99.5f => "SSS",

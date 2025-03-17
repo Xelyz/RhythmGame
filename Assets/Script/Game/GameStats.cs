@@ -1,8 +1,5 @@
-public static class PlayStats
+public static class GameStats
 {
-    public static Meta meta;
-    public static int diff = 0;
-
     public static int perfectCount = 0;
     public static int goodCount = 0;
     public static int badCount = 0;

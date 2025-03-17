@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
 
         spawnTime = Values.spawnTime;
         LoadChart();
-        audioSource.clip = Resources.Load<AudioClip>($"songs/{PlayStats.meta.id}/track");
+        audioSource.clip = Resources.Load<AudioClip>($"songs/{PlayInfo.meta.id}/track");
         audioSource.clip.LoadAudioData();
     }
 
@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour
 
     private void LoadChart()
     {
-        TextAsset rawChart = Resources.Load<TextAsset>($"songs/{PlayStats.meta.id}/chart_{PlayStats.diff}");
+        TextAsset rawChart = Resources.Load<TextAsset>($"songs/{PlayInfo.meta.id}/chart_{PlayInfo.diff}");
 
         if (rawChart != null)
         {
@@ -69,7 +69,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"Failed to load chart_{PlayStats.diff} from Resources.");
+            Debug.LogError($"Failed to load chart_{PlayInfo.diff} from Resources.");
         }
     }
 
