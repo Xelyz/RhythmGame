@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -8,6 +7,8 @@ using DG.Tweening;
 public class Preview : MonoBehaviour
 {
     public TextMeshProUGUI title;
+    public TextMeshProUGUI bestScore;
+    public TextMeshProUGUI bestRating;
     public Image jacket;
     public Sprite placeholderSprite;
     public GameObject[] diffElement;
@@ -111,6 +112,9 @@ public class Preview : MonoBehaviour
         }
 
         PlayInfo.diff = diff;
+        PlayResult bestResult = Values.playerData.songResults.GetValueOrDefault(PlayInfo.meta.id, new()).GetValueOrDefault(diff, new());
+        bestScore.text = bestResult.accuracy.ToString("F2") + "%";
+        bestRating.text = bestResult.rating.ToString();
 
         // Get the target position from the difficulty element
         Vector3 targetPosition = diffElement[diff].transform.position;

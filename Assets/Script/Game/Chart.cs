@@ -1,8 +1,6 @@
 using UnityEngine;
-using System;
 using System.Collections.Generic;
 using DG.Tweening;
-using Unity.VisualScripting;
 
 public class Note
 {

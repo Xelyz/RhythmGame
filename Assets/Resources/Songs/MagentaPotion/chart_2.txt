@@ -34,7 +34,7 @@ HPDrainRate: 2
 CircleSize: 3
 OverallDifficulty: 3
 ApproachRate: 5
-SliderMultiplier: 1.0999999754130838
+SliderMultiplier: 1.1
 SliderTickRate: 1
 
 [Events]

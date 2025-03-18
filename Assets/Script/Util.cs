@@ -40,6 +40,11 @@ public static class Util
                 reading = "HitObjects";
                 continue;
             }
+            if (line.StartsWith("SliderMultiplier"))
+            {
+                Values.baseSlideSpeed = float.Parse(line.Split(" ")[1]);
+                continue;
+            }
             if (line.StartsWith("["))
             {
                 reading = "";
