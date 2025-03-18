@@ -16,14 +16,14 @@ public class Transition : MonoBehaviour
         // 设置初始位置
         transitionPanel.anchoredPosition = startPosition;
 
+        string sceneName = Transfer.toScene;
+
         // 使用DOTween滑入动画
         transitionPanel.DOAnchorPos(endPosition, slideDuration).SetEase(Ease.OutCubic).OnComplete(() =>
         {
             SceneManager.UnloadSceneAsync(Transfer.fromScene);
+            StartCoroutine(LoadSceneAsync(sceneName));
         });
-
-        string sceneName = Transfer.toScene;
-        StartCoroutine(LoadSceneAsync(sceneName));
     }
 
     IEnumerator LoadSceneAsync(string sceneName)
