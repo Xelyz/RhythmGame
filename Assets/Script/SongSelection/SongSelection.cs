@@ -17,7 +17,7 @@ public class SongSelection : MonoBehaviour
     {
         InitializeComponents();
         LoadSongs();
-        ShowFirstSong();
+        ShowSelectedSong();
     }
 
     private void InitializeComponents()
@@ -86,12 +86,12 @@ public class SongSelection : MonoBehaviour
         preview.UpdatePreview(meta);
     }
 
-    private void ShowFirstSong()
+    private void ShowSelectedSong()
     {
-        if (songList.Count > 0)
-        {
+        if (PlayInfo.meta != null)
+            ShowPreview(PlayInfo.meta);
+        else
             ShowPreview(songList[0]);
-        }
     }
 }
 
