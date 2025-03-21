@@ -90,6 +90,7 @@ public class TouchInput : MonoBehaviour
             Note note = notes[judgmentQueue[firstValidIndex]];
             if (note.timeStamp - time >= -Values.badWindow) break;
             missCount++;
+
             judgeCenter.UpdateStat(Judgment.Miss);
             judgeCenter.Show(Judgment.Miss);
         }

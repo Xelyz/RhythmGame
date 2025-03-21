@@ -12,8 +12,8 @@ public class Setting : MonoBehaviour
     {
         returnButton.onClick.AddListener(Return);
         sensitivitySlider.onValueChanged.AddListener(SetSensitivity);
-        sensitivitySlider.value = Preference.sensitivity;
-        sensitivityValue.text = Preference.sensitivity.ToString("F2");
+        sensitivitySlider.value = Values.Preference.sensitivity;
+        sensitivityValue.text = Values.Preference.sensitivity.ToString("F2");
     }
 
     void Return()
@@ -23,7 +23,7 @@ public class Setting : MonoBehaviour
 
     void SetSensitivity(float value)
     {
-        Preference.sensitivity = value;
+        Values.Preference.sensitivity = value;
         sensitivityValue.text = value.ToString("F2");
     }
 }

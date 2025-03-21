@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -143,6 +144,7 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         Time.timeScale = 1f;
+        DOTween.KillAll();
         Util.Transition("GameScene");
     }
 
@@ -158,6 +160,7 @@ public class GameManager : MonoBehaviour
     public void Quit()
     {
         Time.timeScale = 1f;
+        DOTween.KillAll();
         Util.Transition("SongSelectScene");
     }
 

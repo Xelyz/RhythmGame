@@ -1,6 +1,7 @@
 using UnityEngine;
 
-public class Preference : MonoBehaviour
+[System.Serializable]
+public class Preference
 {
-    public static float sensitivity = 3;
+    public float sensitivity = 3;
 }

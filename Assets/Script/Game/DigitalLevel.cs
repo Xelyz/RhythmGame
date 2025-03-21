@@ -39,8 +39,8 @@ public class DigitalLevel : MonoBehaviour
             tilt -= calibration;
 
             Vector2 circlePos;
-            circlePos.x = tilt.x * Mathf.Rad2Deg / Values.fullTiltAngle * Preference.sensitivity * Values.canvasHalfWidth;
-            circlePos.y = tilt.y * Mathf.Rad2Deg / Values.fullTiltAngle * Preference.sensitivity * Values.canvasHalfWidth;
+            circlePos.x = tilt.x * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
+            circlePos.y = tilt.y * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
 
             circle.transform.localPosition = circlePos;
 

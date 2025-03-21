@@ -40,12 +40,7 @@ public class Tap : Note
         if (gameObject != null && !isFading)
         {
             isFading = true;
-            circle.DOFade(0, 0.2f).OnComplete(
-                () =>
-                {
-                    Release();
-                }
-            );
+            circle.DOFade(0, 0.2f).OnComplete(Release);
         }
     }
 
@@ -56,7 +51,7 @@ public class Tap : Note
             circle.DOKill();
             outerCircle.transform.DOKill();
             circle.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
-            circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad);
+            circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad).OnComplete(Release);
         }
     }
 
@@ -76,11 +71,14 @@ public class Tap : Note
         float animationDuration = (timeStamp - GameManager.Instance.currentTime) / 1000f;
 
         gameObject.transform.SetParent(noteHolder);
+        gameObject.transform.localPosition = Vector3.zero;
+
         head.localPosition = position;
         head.localScale = new Vector3(Values.noteRadius, Values.noteRadius, 1f);
 
         circle.color = Util.GetColor();
         circle.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
+        circle.transform.localScale = new(1, 1, 1);
         circle.sortingOrder = -nthNote;
 
         outerCircle.SetActive(true);
@@ -122,12 +120,7 @@ public class Slide : Tap
         if (gameObject != null && !isFading)
         {
             isFading = true;
-            circle.DOFade(0, 0.2f).OnComplete(
-                () =>
-                {
-                    Release();
-                }
-            );
+            circle.DOFade(0, 0.2f).OnComplete(Release);
 
             curveMaterial.DOFade(0, 0.2f);
 
@@ -143,9 +136,10 @@ public class Slide : Tap
             outerCircle.transform.DOKill();
             curveMaterial.DOKill();
             circle.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
-            circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad);
+            circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad).OnComplete(Release);
             curveMaterial.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
-            DOTween.To(() => curveDrawer.width, x => {
+            DOTween.To(() => curveDrawer.width, x =>
+            {
                 curveDrawer.width = x;
                 curveDrawer.RenderPath(slideSegments);
             }, curveDrawer.width * 1.5f, 0.1f).SetEase(Ease.OutQuad);

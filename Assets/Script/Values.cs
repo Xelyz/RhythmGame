@@ -6,6 +6,7 @@ public static class Values
     public static bool accAvail = false;
     public static string savePath = Path.Combine(Application.persistentDataPath, "playResults.json");
     public static PlayerData playerData = new();
+    public static Preference Preference => playerData.preference;
 
     public static float noteRadius = 40f;
     public static float judgeLeniency = 15f;

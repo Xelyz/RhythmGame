@@ -20,4 +20,5 @@ public class PlayerData
     // }
 
     public Dictionary<string, Dictionary<int, PlayResult>> songResults = new();
+    public Preference preference = new();
 }
