@@ -73,25 +73,32 @@ public class Tap : Note
         gameObject.transform.SetParent(noteHolder);
         gameObject.transform.localPosition = Vector3.zero;
 
-        head.localPosition = position;
+        head.localPosition = new(position.x, position.y);
         head.localScale = new Vector3(Values.noteRadius, Values.noteRadius, 1f);
 
         circle.color = Util.GetColor();
         circle.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
+
+        Vector3 newPosition = circle.transform.position;
+        newPosition.z = Values.planeDistance + animationDuration * Values.Preference.noteSpeed;
+        circle.transform.position = newPosition;
+
         circle.transform.localScale = new(1, 1, 1);
         circle.sortingOrder = -nthNote;
 
         outerCircle.SetActive(true);
         SpriteRenderer outerSR = outerCircle.GetComponentInChildren<SpriteRenderer>();
         outerSR.color = Util.GetColor();
-        outerSR.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
+        outerSR.DOFade(0.8f, 0.7f).From(0f).SetDelay(animationDuration - 0.7f).SetEase(Ease.Linear);
 
-        outerCircle.transform.DOScale(1f, animationDuration).From(animationDuration * 4f).SetEase(Ease.Linear).OnKill(() => outerCircle.SetActive(false));
+        outerCircle.transform.DOScale(1f, animationDuration).From(1.8f).SetEase(Ease.Linear).OnKill(() => outerCircle.SetActive(false));
 
         isFading = false;
     }
 }
 
+
+// Legacy. Kept in case of use in the future
 public class Slide : Tap
 {
     public float beatInterval;

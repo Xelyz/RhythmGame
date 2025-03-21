@@ -25,24 +25,13 @@ public static class Util
         List<TimingPoint> timingPoints = new();
         string[] lines = chartData.Split('\n');
         string reading = "";
-        Vector2 lastPos = Vector2.zero;
         int n = 1;
         foreach (string line in lines)
         {
             if (line == "") continue;
-            if (line.StartsWith("[TimingPoints]"))
-            {
-                reading = "TimingPoints";
-                continue;
-            }
             if (line.StartsWith("[HitObjects]"))
             {
                 reading = "HitObjects";
-                continue;
-            }
-            if (line.StartsWith("SliderMultiplier"))
-            {
-                Values.baseSlideSpeed = float.Parse(line.Split(" ")[1]);
                 continue;
             }
             if (line.StartsWith("["))
@@ -50,121 +39,21 @@ public static class Util
                 reading = "";
                 continue;
             }
-            if (reading == "TimingPoints")
-            {
-                string[] data = line.Split(',');
-                TimingPoint timingPoint = new()
-                {
-                    startTime = float.Parse(data[0]),
-                    endTime = Mathf.Infinity,
-                };
-
-                if (timingPoints.Count > 0)
-                {
-                    TimingPoint last = timingPoints[^1];
-                    last.endTime = timingPoint.startTime;
-                    timingPoints[^1] = last;
-                }
-
-                if (int.Parse(data[6]) == 1)
-                {
-                    timingPoint.beatInterval = float.Parse(data[1]);
-                    timingPoint.slideSpeed = 1f;
-                }
-                else
-                {
-                    timingPoint.beatInterval = timingPoints[^1].beatInterval;
-                    timingPoint.slideSpeed = -100f / float.Parse(data[1]);
-                }
-
-                timingPoints.Add(timingPoint);
-            }
             if (reading == "HitObjects")
             {
                 string[] data = line.Split(',');
 
                 int noteType = int.Parse(data[3]);
 
-                Note note;
-                if ((noteType & 1) == 1)
+                Tap tap = new()
                 {
-                    Tap tap = new()
-                    {
-                        position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
-                        timeStamp = int.Parse(data[2]),
-                        noteType = NoteType.Tap,
-                        nthNote = n++
-                    };
-                    note = tap;
-                }
-                else if ((noteType >> 1 & 1) == 1)
-                {
-                    Slide slide = new()
-                    {
-                        position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
-                        timeStamp = int.Parse(data[2]),
-                        noteType = NoteType.Slide,
-                        nthNote = n++,
-                    };
+                    position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
+                    timeStamp = int.Parse(data[2]),
+                    noteType = NoteType.Tap,
+                    nthNote = n++
+                };
 
-                    string[] pointStr = data[5].Split('|');
-                    SlideShape shape = pointStr[0] switch
-                    {
-                        "L" => SlideShape.Linear,
-                        "B" => SlideShape.Bezier,
-                        "P" => SlideShape.Circle,
-                        _ => SlideShape.Bezier,
-                    };
-
-                    pointStr[0] = $"{data[0]}:{data[1]}";
-
-                    List<Vector3> points = new();
-                    foreach (string coord in pointStr)
-                    {
-                        string[] xy = coord.Split(':');
-                        Vector3 point = PivotMiddle(new(float.Parse(xy[0]), float.Parse(xy[1])));
-                        if (points.Count != 0 && points[^1] == point)
-                        {
-                            slide.slideSegments.Add(new()
-                            {
-                                shape = shape,
-                                points = points.ToArray()
-                            });
-                            points.Clear();
-                        }
-                        points.Add(point);
-                    }
-                    slide.slideSegments.Add(new()
-                    {
-                        shape = shape,
-                        points = points.ToArray()
-                    });
-                    points.Clear();
-                    
-                    slide.fixedLength = float.Parse(data[7]);
-                    slide.PreProcessSegments();
-
-                    TimingPoint currTP = new();
-                    // Assign beat interval based on the timing point the note is in
-                    foreach (var timingPoint in timingPoints)
-                    {
-                        if (slide.timeStamp >= timingPoint.startTime && slide.timeStamp < timingPoint.endTime)
-                        {
-                            currTP = timingPoint;
-                            break;
-                        }
-                    }
-                    
-                    slide.beatInterval = currTP.beatInterval;
-                    slide.duration = slide.fixedLength / (Values.baseSlideSpeed * 100 * currTP.slideSpeed) * currTP.beatInterval;
-                    note = slide;
-                }
-                else
-                {
-                    note = new Note();
-                }
-
-                chart.notes.Add(note);
+                chart.notes.Add(tap);
             }
         }
         return chart;
