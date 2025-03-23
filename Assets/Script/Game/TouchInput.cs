@@ -76,7 +76,7 @@ public class TouchInput : MonoBehaviour
     private void JudgeNotes()
     {
         int time = GameManager.Instance.currentTime;
-        float judgeRadiusSquared = Values.JudgeRadius * Values.JudgeRadius;
+        float judgeRadiusSquared = Values.TapJudgeRadius * Values.TapJudgeRadius;
 
         // 使用数组而不是List来存储判定队列,减少内存分配
         int queueCount = judgmentQueue.Count;
@@ -105,7 +105,9 @@ public class TouchInput : MonoBehaviour
         // 缓存常用变量
         Vector2 curPos = cursorPos;
 
-        for (int i = 0; i < queueCount;)
+        List<int> removeList = new();
+
+        for (int i = 0; i < queueCount; i++)
         {
             int n = judgmentQueue[i];
             Note note = notes[n];
@@ -114,33 +116,49 @@ public class TouchInput : MonoBehaviour
             bool isJudged = false;
             Judgment judgment = Judgment.Miss;
 
-            if (tap > 0 && (note.position - curPos).sqrMagnitude < judgeRadiusSquared)
-            {
-                isJudged = true;
-                judgment = judgeCenter.Judge(timeDifference);
-                tap--;
-
-                if (note.noteType == NoteType.Tap)
-                {
-                    note.PopOut();
-                }
-            }
-            else if (timeDifference < 0 && note.noteType == NoteType.Tap)
+            if (timeDifference < 0)
             {
                 note.FadeOut();
             }
 
+            if ((note.noteType == NoteType.Tap && tap <= 0) ||
+            (note.noteType == NoteType.Drag && touch <= 0))
+            {
+
+            }
+            else if ((note.position - curPos).sqrMagnitude < judgeRadiusSquared)
+            {
+                if (note.noteType == NoteType.Drag)
+                {
+                    if (judgeCenter.Judge(timeDifference) != Judgment.Bad)
+                    {
+                        isJudged = true;
+
+                        judgment = Judgment.Perfect;
+                        note.PopOut();
+                    }
+                }
+                if (note.noteType == NoteType.Tap)
+                {
+                    isJudged = true;
+                    judgment = judgeCenter.Judge(timeDifference);
+                    tap--;
+
+                    note.PopOut();
+                }
+            }
+
             if (isJudged)
             {
-                judgmentQueue.RemoveAt(i);
-                queueCount--;
+                removeList.Add(i);
                 judgeCenter.UpdateStat(judgment);
                 judgeCenter.Show(judgment);
             }
-            else
-            {
-                i++;
-            }
+        }
+
+        for (int i = removeList.Count - 1; i >= 0; i--)
+        {
+            judgmentQueue.RemoveAt(removeList[i]);
         }
     }
 

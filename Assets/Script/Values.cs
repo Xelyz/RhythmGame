@@ -9,10 +9,11 @@ public static class Values
     public static Preference Preference => playerData.preference;
 
     public static float planeDistance = 5f;
-    public static float noteRadius = 50f;
+    public static float TapRadius = 50f;
+    public static float DragRadius = 30f;
     public static float judgeLeniency = 10f;
-    public static float JudgeRadius => noteRadius + judgeLeniency;
-    public static float HoldingRadius => noteRadius * 2;
+    public static float TapJudgeRadius => TapRadius + judgeLeniency;
+    public static float HoldingRadius => TapRadius * 2;
 
     public static float fullTiltAngle = 60;
 

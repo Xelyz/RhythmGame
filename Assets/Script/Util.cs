@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Newtonsoft.Json;
+using System.IO;
 
 public static class Util
 {
@@ -14,6 +16,21 @@ public static class Util
     public static int Sign(float value)
     {
         return value > 0 ? 1 : value < 0 ? -1 : 0;
+    }
+
+    public static void SaveData()
+    {
+        try
+        {
+            // 使用 Newtonsoft.Json 序列化
+            string json = JsonConvert.SerializeObject(Values.playerData, Formatting.Indented);
+            File.WriteAllText(Values.savePath, json);
+            Debug.Log("Results saved to: " + Values.savePath);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Failed to save results: " + e.Message);
+        }
     }
 
     public static Chart GetChart(string chartData)
@@ -62,11 +79,6 @@ public static class Util
     public static Vector2 PivotMiddle(Vector2 pivotTopLeft)
     {
         return new Vector2(pivotTopLeft.x - 0.5f * Values.noteHolderWidth, -pivotTopLeft.y + 0.5f * Values.noteHolderHeight);
-    }
-
-    public static Color GetColor()
-    {
-        return new Color(255 / 255f, 255 / 255f, 255 / 255f);
     }
 
     public static Vector3 Bezier(float t, Vector3[] points)

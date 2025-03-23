@@ -24,6 +24,7 @@ public class Tap : Note
     public Transform head;
     public SpriteRenderer circle;
     public GameObject outerCircle;
+    public float Radius => Values.TapRadius;
 
     public bool isFading = false;
 
@@ -74,9 +75,8 @@ public class Tap : Note
         gameObject.transform.localPosition = Vector3.zero;
 
         head.localPosition = new(position.x, position.y);
-        head.localScale = new Vector3(Values.noteRadius, Values.noteRadius, 1f);
+        head.localScale = new Vector3(Radius, Radius, 1f);
 
-        circle.color = Util.GetColor();
         circle.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
 
         Vector3 newPosition = circle.transform.position;
@@ -88,13 +88,17 @@ public class Tap : Note
 
         outerCircle.SetActive(true);
         SpriteRenderer outerSR = outerCircle.GetComponentInChildren<SpriteRenderer>();
-        outerSR.color = Util.GetColor();
         outerSR.DOFade(0.8f, 0.7f).From(0f).SetDelay(animationDuration - 0.7f).SetEase(Ease.Linear);
 
         outerCircle.transform.DOScale(1f, animationDuration).From(1.8f).SetEase(Ease.Linear).OnKill(() => outerCircle.SetActive(false));
 
         isFading = false;
     }
+}
+
+public class Drag : Tap
+{
+    public new float Radius => Values.TapRadius;
 }
 
 
@@ -168,10 +172,10 @@ public class Slide : Tap
     {
         base.Initialize(noteHolder);
         gameObject.transform.localScale = new Vector3(1f, 1f, 1f);
-        curveDrawer.width = 2 * Values.noteRadius;
+        curveDrawer.width = 2 * Values.TapRadius;
         curveDrawer.RenderPath(slideSegments);
 
-        curveMaterial.color = Util.GetColor();
+        curveMaterial.color = Color.white;
         curveMaterial.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
     }
 
@@ -252,6 +256,7 @@ public enum NoteType
 {
     Tap,
     Slide,
+    Drag,
 }
 
 public class Chart

@@ -26,6 +26,7 @@ public class Setting : MonoBehaviour
     void Return()
     {
         Util.Transition("SongSelectScene");
+        Util.SaveData();
     }
 
     void SetSensitivity(float value)
