@@ -4,8 +4,10 @@ using UnityEngine.Pool;
 public class NotePool : MonoBehaviour
 {
     public GameObject tapPrefab;
+    public GameObject dragPrefab;
 
     ObjectPool<GameObject> tapPool;
+    ObjectPool<GameObject> dragPool;
 
     public static NotePool Instance;
 
@@ -31,7 +33,19 @@ public class NotePool : MonoBehaviour
             Destroy(note);
         }, false, 10, 20);
 
-        
+        dragPool = new(() =>
+        {
+            return Instantiate(dragPrefab);
+        }, note =>
+        {
+            note.SetActive(true);
+        }, note =>
+        {
+            note.SetActive(false);
+        }, note =>
+        {
+            Destroy(note);
+        }, false, 15, 30);
     }
 
     public ObjectPool<GameObject> GetPool(NoteType type)
@@ -39,6 +53,7 @@ public class NotePool : MonoBehaviour
         return type switch
         {
             NoteType.Tap => tapPool,
+            NoteType.Drag => dragPool,
             _ => null,
         };
     }
@@ -48,6 +63,7 @@ public class NotePool : MonoBehaviour
         return type switch
         {
             NoteType.Tap => tapPool.Get(),
+            NoteType.Drag => dragPool.Get(),
             _ => null,
         };
     }
@@ -58,6 +74,9 @@ public class NotePool : MonoBehaviour
         {
             case NoteType.Tap:
                 tapPool.Release(note);
+                break;
+            case NoteType.Drag:
+                dragPool.Release(note);
                 break;
         }
     }
