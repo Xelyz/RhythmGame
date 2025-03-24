@@ -39,7 +39,6 @@ public static class Util
         {
             notes = new()
         };
-        List<TimingPoint> timingPoints = new();
         string[] lines = chartData.Split('\n');
         string reading = "";
         int n = 1;
@@ -66,7 +65,6 @@ public static class Util
                 {
                     position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
                     timeStamp = int.Parse(data[2]),
-                    noteType = NoteType.Tap,
                     nthNote = n++
                 };
 
