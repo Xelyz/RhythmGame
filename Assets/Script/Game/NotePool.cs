@@ -4,10 +4,8 @@ using UnityEngine.Pool;
 public class NotePool : MonoBehaviour
 {
     public GameObject tapPrefab;
-    public GameObject slidePrefab;
 
     ObjectPool<GameObject> tapPool;
-    ObjectPool<GameObject> slidePool;
 
     public static NotePool Instance;
 
@@ -33,19 +31,7 @@ public class NotePool : MonoBehaviour
             Destroy(note);
         }, false, 10, 20);
 
-        slidePool = new(() =>
-        {
-            return Instantiate(slidePrefab);
-        }, note =>
-        {
-            note.SetActive(true);
-        }, note =>
-        {
-            note.SetActive(false);
-        }, note =>
-        {
-            Destroy(note);
-        }, false, 10, 20);
+        
     }
 
     public ObjectPool<GameObject> GetPool(NoteType type)
@@ -53,7 +39,6 @@ public class NotePool : MonoBehaviour
         return type switch
         {
             NoteType.Tap => tapPool,
-            NoteType.Slide => slidePool,
             _ => null,
         };
     }
@@ -63,7 +48,6 @@ public class NotePool : MonoBehaviour
         return type switch
         {
             NoteType.Tap => tapPool.Get(),
-            NoteType.Slide => slidePool.Get(),
             _ => null,
         };
     }
@@ -74,9 +58,6 @@ public class NotePool : MonoBehaviour
         {
             case NoteType.Tap:
                 tapPool.Release(note);
-                break;
-            case NoteType.Slide:
-                slidePool.Release(note);
                 break;
         }
     }

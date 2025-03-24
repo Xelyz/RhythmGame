@@ -94,7 +94,7 @@ public class GameManager : MonoBehaviour
     private bool IsGameFinished()
     {
         return currentTime >= notes[^1].timeStamp && 
-               TouchInput.Instance.holdJudgmentQueue.Count == 0;
+               TouchInput.Instance.judgmentQueue.Count == 0;
     }
 
     private void SpawnNotes()

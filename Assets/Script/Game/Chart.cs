@@ -24,9 +24,14 @@ public class Tap : Note
     public Transform head;
     public SpriteRenderer circle;
     public GameObject outerCircle;
-    public float Radius => Values.TapRadius;
+    public float radius = Values.TapRadius;
 
     public bool isFading = false;
+
+    public Tap()
+    {
+        noteType = NoteType.Tap;
+    }
 
     protected virtual void GetObjects()
     {
@@ -75,7 +80,7 @@ public class Tap : Note
         gameObject.transform.localPosition = Vector3.zero;
 
         head.localPosition = new(position.x, position.y);
-        head.localScale = new Vector3(Radius, Radius, 1f);
+        head.localScale = new Vector3(radius, radius, 1f);
 
         circle.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
 
@@ -98,164 +103,17 @@ public class Tap : Note
 
 public class Drag : Tap
 {
-    public new float Radius => Values.TapRadius;
-}
+    public new float radius = Values.DragRadius;
 
-
-// Legacy. Kept in case of use in the future
-public class Slide : Tap
-{
-    public float beatInterval;
-    public float duration;
-    public float fixedLength;
-    public List<SlideSegment> slideSegments = new();
-    public List<float> segmentLengthRatio = new();
-
-    public int tick = 1;
-
-    public HoldCurve curveDrawer;
-    public Material curveMaterial;
-
-    protected override void GetObjects()
+    public Drag()
     {
-        gameObject = NotePool.Instance.Get(noteType);
-        head = gameObject.transform.Find("Head");
-        circle = head.Find("Circle").GetComponent<SpriteRenderer>();
-        outerCircle = head.Find("OuterCircle").gameObject;
-        curveDrawer = gameObject.transform.Find("PathRenderer").GetComponent<HoldCurve>();
-        curveMaterial = curveDrawer.GetComponent<MeshRenderer>().material;
+        noteType = NoteType.Drag;
     }
-
-    public override void FadeOut()
-    {
-        if (gameObject != null && !isFading)
-        {
-            isFading = true;
-            circle.DOFade(0, 0.2f).OnComplete(Release);
-
-            curveMaterial.DOFade(0, 0.2f);
-
-            outerCircle.SetActive(false);
-        }
-    }
-
-    public override void PopOut()
-    {
-        if (gameObject != null)
-        {
-            circle.DOKill();
-            outerCircle.transform.DOKill();
-            curveMaterial.DOKill();
-            circle.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
-            circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad).OnComplete(Release);
-            curveMaterial.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
-            DOTween.To(() => curveDrawer.width, x =>
-            {
-                curveDrawer.width = x;
-                curveDrawer.RenderPath(slideSegments);
-            }, curveDrawer.width * 1.5f, 0.1f).SetEase(Ease.OutQuad);
-        }
-    }
-
-    public override void Release()
-    {
-        if (gameObject != null)
-        {
-            circle.DOKill();
-            outerCircle.transform.DOKill();
-            curveMaterial.DOKill();
-            NotePool.Instance.Release(noteType, gameObject);
-        }
-    }
-
-    public override void Initialize(Transform noteHolder)
-    {
-        base.Initialize(noteHolder);
-        gameObject.transform.localScale = new Vector3(1f, 1f, 1f);
-        curveDrawer.width = 2 * Values.TapRadius;
-        curveDrawer.RenderPath(slideSegments);
-
-        curveMaterial.color = Color.white;
-        curveMaterial.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
-    }
-
-    public void PreProcessSegments()
-    {
-        float length = 0;
-        foreach (var segment in slideSegments)
-        {
-            length += segment.GetLength();
-            segmentLengthRatio.Add(length / fixedLength);
-            if (length > fixedLength)
-            {
-                segment.maxT = (fixedLength - (length - segment.GetLength())) / segment.GetLength();
-            }
-        }
-    }
-
-    public void UpdatePosition(int time, out Vector2 position)
-    {
-        position = PointAt(time);
-        head.localPosition = position;
-    }
-
-    public Vector2 PointAt(int time)
-    {
-        float t = (time - timeStamp) / duration;
-        t = Mathf.Clamp(t, 0f, 1f);
-
-        float pre = 0f;
-        for (int i = 0; i < segmentLengthRatio.Count; i++)
-        {
-            float ratio = segmentLengthRatio[i];
-            if (t <= ratio)
-            {
-                SlideSegment currSeg = slideSegments[i];
-                Vector2 position = currSeg.PointAt((t - pre) / (ratio - pre));
-                return position;
-            }
-            pre = ratio;
-        }
-        return slideSegments[^1].PointAt(slideSegments[^1].maxT);
-    }
-}
-
-public class SlideSegment
-{
-    public Vector3[] points;
-    public SlideShape shape;
-    private float length;
-    public float maxT = 1;
-
-    public Vector3 PointAt(float t)
-    {
-        return Util.GetCurveFunc(shape)(t, points);
-    }
-
-    public float GetLength()
-    {
-        if (length == 0)
-        {
-            for (int i = 0; i < 50; i++) // segment count = 50
-            {
-                length += Vector2.Distance(PointAt(i / 50f), PointAt((i + 1) / 50f));
-            }
-        }
-        return length;
-    }
-}
-
-public enum SlideShape
-{
-    Bezier,
-    Linear,
-    Circle
 }
 
 public enum NoteType
 {
     Tap,
-    Slide,
     Drag,
 }
 

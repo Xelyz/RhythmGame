@@ -12,8 +12,7 @@ public class TouchInput : MonoBehaviour
     int touch = 0;
     Vector2 cursorPos = new();
 
-    List<int> judgmentQueue = new();
-    internal List<int> holdJudgmentQueue = new();
+    public List<int> judgmentQueue = new();
 
     int pointer = 0;
 
@@ -47,7 +46,6 @@ public class TouchInput : MonoBehaviour
 
         UpdateJudgmentQueue();
         JudgeNotes();
-        JudgeHolding();
     }
 
     private void UpdateJudgmentQueue()
@@ -64,10 +62,6 @@ public class TouchInput : MonoBehaviour
             }
 
             judgmentQueue.Add(pointer);
-            if (notes[pointer].noteType == NoteType.Slide)
-            {
-                holdJudgmentQueue.Add(pointer);
-            }
 
             pointer++;
         }
@@ -159,60 +153,6 @@ public class TouchInput : MonoBehaviour
         for (int i = removeList.Count - 1; i >= 0; i--)
         {
             judgmentQueue.RemoveAt(removeList[i]);
-        }
-    }
-
-    private void JudgeHolding()
-    {
-        int time = GameManager.Instance.currentTime;
-        float holdingRadiusSquared = Values.HoldingRadius * Values.HoldingRadius;
-        Vector2 curPos = cursorPos; // 缓存光标位置
-        bool hasTouch = touch > 0;  // 缓存触摸状态
-        int count = holdJudgmentQueue.Count;
-
-        for (int i = 0; i < count;)
-        {
-            int n = holdJudgmentQueue[i];
-            Slide note = notes[n] as Slide;
-
-            if (note.timeStamp > time)
-            {
-                i++;
-                continue;
-            }
-
-            note.UpdatePosition(time, out Vector2 position);
-            float stop = note.timeStamp + note.duration;
-            bool isHolding = false;
-
-            // 只在有触摸时计算距离
-            if (hasTouch)
-            {
-                float sqrDist = (position - curPos).sqrMagnitude;
-                isHolding = sqrDist < holdingRadiusSquared;
-            }
-
-            if (time >= stop)
-            {
-                Judgment judgment = isHolding ? Judgment.Perfect : Judgment.Miss;
-                judgeCenter.UpdateStat(judgment);
-                judgeCenter.Show(judgment);
-                note.PopOut();
-                holdJudgmentQueue.RemoveAt(i);
-                count--;
-                continue;
-            }
-
-            // Update judgment periodically based on the note's beat interval
-            if ((time - note.timeStamp) > note.beatInterval * note.tick)
-            {
-                Judgment judgment = isHolding ? Judgment.Perfect : Judgment.Miss;
-                judgeCenter.UpdateStat(judgment);
-                judgeCenter.Show(judgment);
-                note.tick++;
-            }
-
-            i++;
         }
     }
 
