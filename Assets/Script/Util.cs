@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Newtonsoft.Json;
@@ -11,6 +12,12 @@ public static class Util
         Transfer.fromScene = SceneManager.GetActiveScene().name;
         Transfer.toScene = toScene;
         SceneManager.LoadScene("LoadingScene", LoadSceneMode.Additive);
+    }
+
+    public static IEnumerator DelayAction(Action action, float delaySeconds)
+    {
+        yield return new WaitForSeconds(delaySeconds);
+        action?.Invoke();
     }
 
     public static int Sign(float value)
@@ -61,14 +68,14 @@ public static class Util
 
                 int noteType = int.Parse(data[3]);
 
-                Tap tap = new()
+                Tap note = new()
                 {
                     position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
                     timeStamp = int.Parse(data[2]),
                     nthNote = n++
                 };
 
-                chart.notes.Add(tap);
+                chart.notes.Add(note);
             }
         }
         return chart;

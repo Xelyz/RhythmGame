@@ -24,13 +24,14 @@ public class Tap : Note
     public Transform head;
     public SpriteRenderer circle;
     public GameObject outerCircle;
-    public float radius = Values.TapRadius;
+    public float radius;
 
     public bool isFading = false;
 
     public Tap()
     {
         noteType = NoteType.Tap;
+        radius = Values.TapRadius;
     }
 
     protected virtual void GetObjects()
@@ -103,11 +104,10 @@ public class Tap : Note
 
 public class Drag : Tap
 {
-    public new float radius = Values.DragRadius;
-
     public Drag()
     {
         noteType = NoteType.Drag;
+        radius = Values.DragRadius;
     }
 }
 

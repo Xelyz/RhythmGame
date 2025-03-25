@@ -107,7 +107,6 @@ public class TouchInput : MonoBehaviour
             Note note = notes[n];
             int timeDifference = note.timeStamp - time;
 
-            bool isJudged = false;
             Judgment judgment = Judgment.Miss;
 
             if (timeDifference < 0)
@@ -115,8 +114,7 @@ public class TouchInput : MonoBehaviour
                 note.FadeOut();
             }
 
-            if ((note.noteType == NoteType.Tap && tap <= 0) ||
-            (note.noteType == NoteType.Drag && touch <= 0))
+            if (note.noteType == NoteType.Tap && tap <= 0)
             {
 
             }
@@ -126,34 +124,39 @@ public class TouchInput : MonoBehaviour
                 {
                     if (judgeCenter.Judge(timeDifference) != Judgment.Bad)
                     {
-                        isJudged = true;
-
                         judgment = Judgment.Perfect;
-                        note.PopOut();
+                        removeList.Add(i);
+
+                        if (timeDifference > 0)
+                            StartCoroutine(Util.DelayAction(() => JudgeFeedback(judgment, note), timeDifference / 1000f));
+                        else
+                            JudgeFeedback(judgment, note);
                     }
                 }
                 if (note.noteType == NoteType.Tap)
                 {
-                    isJudged = true;
                     judgment = judgeCenter.Judge(timeDifference);
                     tap--;
+                    removeList.Add(i);
 
-                    note.PopOut();
+                    JudgeFeedback(judgment, note);
                 }
             }
 
-            if (isJudged)
-            {
-                removeList.Add(i);
-                judgeCenter.UpdateStat(judgment);
-                judgeCenter.Show(judgment);
-            }
         }
 
         for (int i = removeList.Count - 1; i >= 0; i--)
         {
             judgmentQueue.RemoveAt(removeList[i]);
         }
+    }
+
+    void JudgeFeedback(Judgment judgment, Note note)
+    {
+        judgeCenter.UpdateStat(judgment);
+        judgeCenter.Show(judgment);
+
+        note.PopOut();
     }
 
     private void ProcessTouch()
