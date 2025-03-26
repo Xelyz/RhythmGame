@@ -5,7 +5,7 @@ public class NoteScroll : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (transform.position.z > Values.planeDistance)
+        if (GameManager.Instance.isGamePlaying && transform.position.z > Values.planeDistance)
             transform.position -= new Vector3(0, 0, Values.Preference.noteSpeed * Time.deltaTime);
     }
 }

@@ -19,7 +19,8 @@ public class GameManager : MonoBehaviour
     public int currentTime = 0;
     int spawnTime;
 
-    public bool isPlaying = false;
+    public bool isGamePlaying = false;
+    public bool isAudioPlaying = false;
 
     void Awake()
     {
@@ -43,13 +44,14 @@ public class GameManager : MonoBehaviour
     IEnumerator GameStart()
     {
         currentTime = -Values.waitTime; // Set currentTime to a negative value during the initial wait period
+        isGamePlaying = true;
         float startTime = Time.time;
         while (Time.time - startTime < Values.waitTime / 1000f)
         {
             currentTime = (int)((Time.time - startTime) * 1000) - Values.waitTime;
             yield return null;
         }
-        isPlaying = true;
+        isAudioPlaying = true;
         audioSource.Play();
         Debug.Log("Game Start");
     }
@@ -77,9 +79,11 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!isGamePlaying) return;
+
         SpawnNotes();
 
-        if (!isPlaying) return;
+        if (!isAudioPlaying) return;
 
         currentTime = (int)(audioSource.time * 1000);
 
@@ -114,7 +118,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator EndGame()
     {
-        isPlaying = false;
+        isGamePlaying = false;
 
         // 2秒音乐渐隐
         float startVolume = audioSource.volume;
@@ -127,6 +131,8 @@ public class GameManager : MonoBehaviour
             audioSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
             yield return null;
         }
+
+        isAudioPlaying = false;
         audioSource.Stop();
 
         ShowScore();
@@ -134,7 +140,8 @@ public class GameManager : MonoBehaviour
 
     public void Pause()
     {
-        isPlaying = false;
+        isGamePlaying = false;
+        isAudioPlaying = false;
         audioSource.Pause();
         Time.timeScale = 0f;
         pauseButton.gameObject.SetActive(false);
@@ -150,7 +157,8 @@ public class GameManager : MonoBehaviour
 
     public void Resume()
     {
-        isPlaying = true;
+        isGamePlaying = true;
+        isAudioPlaying = true;
         audioSource.Play();
         Time.timeScale = 1f;
         pauseButton.gameObject.SetActive(true);
