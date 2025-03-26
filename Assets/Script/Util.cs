@@ -66,14 +66,28 @@ public static class Util
             {
                 string[] data = line.Split(',');
 
-                int noteType = int.Parse(data[3]);
+                int noteType = int.Parse(data[4]);
 
-                Tap note = new()
+                Note note;
+
+                if ((noteType & 0b10000) == 0b10000)
                 {
-                    position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
-                    timeStamp = int.Parse(data[2]),
-                    nthNote = n++
-                };
+                    note = new Drag()
+                    {
+                        position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
+                        timeStamp = int.Parse(data[2]),
+                        nthNote = n++
+                    };
+                }
+                else
+                {
+                    note = new Tap()
+                    {
+                        position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
+                        timeStamp = int.Parse(data[2]),
+                        nthNote = n++
+                    };
+                }
 
                 chart.notes.Add(note);
             }
