@@ -9,7 +9,6 @@ public class TouchInput : MonoBehaviour
     public JudgeCenter judgeCenter;
 
     int tap = 0;
-    int touch = 0;
     Vector2 cursorPos = new();
 
     public List<int> judgmentQueue = new();
@@ -71,6 +70,7 @@ public class TouchInput : MonoBehaviour
     {
         int time = GameManager.Instance.currentTime;
         float judgeRadiusSquared = Values.TapJudgeRadius * Values.TapJudgeRadius;
+        float blockRadiusSquared = Values.TapRadius * Values.TapRadius;
 
         // 使用数组而不是List来存储判定队列,减少内存分配
         int queueCount = judgmentQueue.Count;
@@ -85,8 +85,7 @@ public class TouchInput : MonoBehaviour
             if (note.timeStamp - time >= -Values.badWindow) break;
             missCount++;
 
-            judgeCenter.UpdateStat(Judgment.Miss);
-            judgeCenter.Show(Judgment.Miss);
+            JudgeFeedback(Judgment.Miss, null);
         }
 
         if (missCount > 0)
@@ -112,15 +111,29 @@ public class TouchInput : MonoBehaviour
             if (timeDifference < 0)
             {
                 note.FadeOut();
+
+                if (note.type == NoteType.Block)
+                {
+                    if ((note.position - curPos).sqrMagnitude < blockRadiusSquared)
+                        judgment = Judgment.Miss;
+                        // some effects here
+                    else
+                        judgment = Judgment.Perfect;
+
+                    removeList.Add(i);
+
+                    JudgeFeedback(judgment, null);
+                }
             }
 
-            if (note.noteType == NoteType.Tap && tap <= 0)
+            if (note.type == NoteType.Tap && tap <= 0)
             {
-
+                continue;
             }
-            else if ((note.position - curPos).sqrMagnitude < judgeRadiusSquared)
+
+            if ((note.position - curPos).sqrMagnitude < judgeRadiusSquared)
             {
-                if (note.noteType == NoteType.Drag)
+                if (note.type == NoteType.Drag)
                 {
                     if (judgeCenter.Judge(timeDifference) != Judgment.Bad)
                     {
@@ -133,7 +146,7 @@ public class TouchInput : MonoBehaviour
                             JudgeFeedback(judgment, note);
                     }
                 }
-                if (note.noteType == NoteType.Tap)
+                if (note.type == NoteType.Tap)
                 {
                     judgment = judgeCenter.Judge(timeDifference);
                     tap--;
@@ -156,14 +169,13 @@ public class TouchInput : MonoBehaviour
         judgeCenter.UpdateStat(judgment);
         judgeCenter.Show(judgment);
 
-        note.PopOut();
+        note?.PopOut();
     }
 
     private void ProcessTouch()
     {
         foreach (Touch finger in Touch.activeTouches)
         {
-            touch += 1;
             if (finger.began)
             {
                 tap += 1;
@@ -177,15 +189,10 @@ public class TouchInput : MonoBehaviour
         {
             tap += 1;
         }
-        if (Keyboard.current.zKey.isPressed || Keyboard.current.xKey.isPressed)
-        {
-            touch += 1;
-        }
     }
 
     private void InitializeInputData()
     {
         tap = 0;
-        touch = 0;
     }
 }

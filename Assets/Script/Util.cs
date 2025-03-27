@@ -40,6 +40,21 @@ public static class Util
         }
     }
 
+    public static readonly int block = 1 << 3;
+    public static readonly int drag = 1 << 2;
+
+    struct NoteData
+    {
+        public int X, Y, TimeStamp, Type;
+        public NoteData(string[] data)
+        {
+            X = int.Parse(data[0]);
+            Y = int.Parse(data[1]);
+            TimeStamp = int.Parse(data[2]);
+            Type = int.Parse(data[4]);
+        }
+    }
+
     public static Chart GetChart(string chartData)
     {
         Chart chart = new()
@@ -66,30 +81,36 @@ public static class Util
             {
                 string[] data = line.Split(',');
 
-                int noteType = int.Parse(data[4]);
-
-                Note note;
-
-                if ((noteType & 0b10000) == 0b10000)
+                try
                 {
-                    note = new Drag()
-                    {
-                        position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
-                        timeStamp = int.Parse(data[2]),
-                        nthNote = n++
-                    };
-                }
-                else
-                {
-                    note = new Tap()
-                    {
-                        position = PivotMiddle(new(int.Parse(data[0]), int.Parse(data[1]))),
-                        timeStamp = int.Parse(data[2]),
-                        nthNote = n++
-                    };
-                }
+                    NoteData noteData = new(data);
 
-                chart.notes.Add(note);
+                    Note note;
+
+                    if ((noteData.Type & block) == block)
+                    {
+                        note = new Block();
+                    }
+                    else if ((noteData.Type & drag) == drag)
+                    {
+                        note = new Drag();
+                    }
+                    else
+                    {
+                        note = new Tap();
+                    }
+
+                    note.position = PivotMiddle(new Vector2(noteData.X, noteData.Y));
+                    note.timeStamp = noteData.TimeStamp;
+                    note.nthNote = n++;
+
+                    chart.notes.Add(note);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to parse line: '{line}'. Error: {e.Message}");
+                    continue; // 跳过错误行，继续处理下一行
+                }
             }
         }
         return chart;

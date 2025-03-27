@@ -6,7 +6,7 @@ public class Note
 {
     public int timeStamp;
     public Vector2 position;
-    public NoteType noteType;
+    public NoteType type;
     public int nthNote;
 
     public virtual void Initialize(Transform noteHolder) { }
@@ -30,13 +30,13 @@ public class Tap : Note
 
     public Tap()
     {
-        noteType = NoteType.Tap;
+        type = NoteType.Tap;
         radius = Values.TapRadius;
     }
 
     protected virtual void GetObjects()
     {
-        gameObject = NotePool.Instance.Get(noteType);
+        gameObject = NotePool.Instance.Get(type);
         head = gameObject.transform;
         circle = head.Find("Circle").GetComponent<SpriteRenderer>();
         outerCircle = head.Find("OuterCircle").gameObject;
@@ -47,7 +47,7 @@ public class Tap : Note
         if (gameObject != null && !isFading)
         {
             isFading = true;
-            circle.DOFade(0, 0.2f).OnComplete(Release);
+            circle.DOFade(0, 0.15f).OnComplete(Release);
         }
     }
 
@@ -68,7 +68,7 @@ public class Tap : Note
         {
             circle.DOKill();
             outerCircle.transform.DOKill();
-            NotePool.Instance.Release(noteType, gameObject);
+            NotePool.Instance.Release(type, gameObject);
         }
     }
 
@@ -106,8 +106,17 @@ public class Drag : Tap
 {
     public Drag()
     {
-        noteType = NoteType.Drag;
+        type = NoteType.Drag;
         radius = Values.DragRadius;
+    }
+}
+
+public class Block : Tap
+{
+    public Block()
+    {
+        type = NoteType.Block;
+        radius = Values.TapRadius;
     }
 }
 
@@ -115,6 +124,7 @@ public enum NoteType
 {
     Tap,
     Drag,
+    Block,
 }
 
 public class Chart

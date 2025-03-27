@@ -1140,6 +1140,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tapPrefab: {fileID: 6526675078129508292, guid: 03b6985d29a394444ba9dd44d7522b07, type: 3}
   dragPrefab: {fileID: 6526675078129508292, guid: a7450d1e28bd64aaab5b1f50e97407cc, type: 3}
+  blockPrefab: {fileID: 6526675078129508292, guid: 6c019e274e2554b3888c771657d1a754, type: 3}
 --- !u!4 &423252542
 Transform:
   m_ObjectHideFlags: 0
@@ -1329,7 +1330,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 56.9, y: 0, z: 0}
-  m_LocalScale: {x: 14.400001, y: 14.400001, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9184849}
@@ -1490,7 +1491,8 @@ MonoBehaviour:
   pauseButton: {fileID: 30580658}
   pausingPage: {fileID: 1622035159}
   currentTime: 0
-  isPlaying: 0
+  isGamePlaying: 0
+  isAudioPlaying: 0
 --- !u!1 &1214863811
 GameObject:
   m_ObjectHideFlags: 0

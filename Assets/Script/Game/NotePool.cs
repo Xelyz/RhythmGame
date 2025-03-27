@@ -5,9 +5,11 @@ public class NotePool : MonoBehaviour
 {
     public GameObject tapPrefab;
     public GameObject dragPrefab;
+    public GameObject blockPrefab;
 
     ObjectPool<GameObject> tapPool;
     ObjectPool<GameObject> dragPool;
+    ObjectPool<GameObject> blockPool;
 
     public static NotePool Instance;
 
@@ -46,6 +48,20 @@ public class NotePool : MonoBehaviour
         {
             Destroy(note);
         }, false, 15, 30);
+
+        blockPool = new(() =>
+        {
+            return Instantiate(blockPrefab);
+        }, note =>
+        {
+            note.SetActive(true);
+        }, note =>
+        {
+            note.SetActive(false);
+        }, note =>
+        {
+            Destroy(note);
+        }, false, 20, 30);
     }
 
     public ObjectPool<GameObject> GetPool(NoteType type)
@@ -54,6 +70,7 @@ public class NotePool : MonoBehaviour
         {
             NoteType.Tap => tapPool,
             NoteType.Drag => dragPool,
+            NoteType.Block => blockPool,
             _ => null,
         };
     }
@@ -64,6 +81,7 @@ public class NotePool : MonoBehaviour
         {
             NoteType.Tap => tapPool.Get(),
             NoteType.Drag => dragPool.Get(),
+            NoteType.Block => blockPool.Get(),
             _ => null,
         };
     }
@@ -77,6 +95,9 @@ public class NotePool : MonoBehaviour
                 break;
             case NoteType.Drag:
                 dragPool.Release(note);
+                break;
+            case NoteType.Block:
+                blockPool.Release(note);
                 break;
         }
     }
