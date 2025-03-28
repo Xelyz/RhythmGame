@@ -8,16 +8,17 @@ public static class Values
     public static PlayerData playerData = new();
     public static Preference Preference => playerData.preference;
 
-    public static float noteRadius = 40f;
-    public static float judgeLeniency = 15f;
-    public static float JudgeRadius => noteRadius + judgeLeniency;
-    public static float HoldingRadius => noteRadius * 2;
+    public static float planeDistance = 5f;
+    public static float TapRadius = 50f;
+    public static float DragRadius = 30f;
+    public static float judgeLeniency = 10f;
+    public static float TapJudgeRadius => TapRadius + judgeLeniency;
+    public static float HoldingRadius => TapRadius * 2;
 
     public static float fullTiltAngle = 60;
 
     public static int waitTime = 2000;
-    public static int spawnTime = 1000;
-    public static float baseSlideSpeed = 1.1f;
+    public static int spawnTime = 1500;
 
     public static int prefectWindow = 60;
     public static int goodWindow = 90;

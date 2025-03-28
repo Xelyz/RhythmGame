@@ -4,10 +4,12 @@ using UnityEngine.Pool;
 public class NotePool : MonoBehaviour
 {
     public GameObject tapPrefab;
-    public GameObject slidePrefab;
+    public GameObject dragPrefab;
+    public GameObject blockPrefab;
 
     ObjectPool<GameObject> tapPool;
-    ObjectPool<GameObject> slidePool;
+    ObjectPool<GameObject> dragPool;
+    ObjectPool<GameObject> blockPool;
 
     public static NotePool Instance;
 
@@ -33,9 +35,9 @@ public class NotePool : MonoBehaviour
             Destroy(note);
         }, false, 10, 20);
 
-        slidePool = new(() =>
+        dragPool = new(() =>
         {
-            return Instantiate(slidePrefab);
+            return Instantiate(dragPrefab);
         }, note =>
         {
             note.SetActive(true);
@@ -45,7 +47,21 @@ public class NotePool : MonoBehaviour
         }, note =>
         {
             Destroy(note);
-        }, false, 10, 20);
+        }, false, 15, 30);
+
+        blockPool = new(() =>
+        {
+            return Instantiate(blockPrefab);
+        }, note =>
+        {
+            note.SetActive(true);
+        }, note =>
+        {
+            note.SetActive(false);
+        }, note =>
+        {
+            Destroy(note);
+        }, false, 20, 30);
     }
 
     public ObjectPool<GameObject> GetPool(NoteType type)
@@ -53,7 +69,8 @@ public class NotePool : MonoBehaviour
         return type switch
         {
             NoteType.Tap => tapPool,
-            NoteType.Slide => slidePool,
+            NoteType.Drag => dragPool,
+            NoteType.Block => blockPool,
             _ => null,
         };
     }
@@ -63,7 +80,8 @@ public class NotePool : MonoBehaviour
         return type switch
         {
             NoteType.Tap => tapPool.Get(),
-            NoteType.Slide => slidePool.Get(),
+            NoteType.Drag => dragPool.Get(),
+            NoteType.Block => blockPool.Get(),
             _ => null,
         };
     }
@@ -75,8 +93,11 @@ public class NotePool : MonoBehaviour
             case NoteType.Tap:
                 tapPool.Release(note);
                 break;
-            case NoteType.Slide:
-                slidePool.Release(note);
+            case NoteType.Drag:
+                dragPool.Release(note);
+                break;
+            case NoteType.Block:
+                blockPool.Release(note);
                 break;
         }
     }

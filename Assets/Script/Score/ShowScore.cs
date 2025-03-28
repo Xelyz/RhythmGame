@@ -31,7 +31,7 @@ public class ShowScore : MonoBehaviour
         backButton.onClick.AddListener(BackToTitle);
 
         UpdateResult();
-        SaveResult();
+        Util.SaveData();
     }
 
     private string GetRating(float acc)
@@ -70,21 +70,6 @@ public class ShowScore : MonoBehaviour
         if (playResult.accuracy > oldScore.accuracy)
         {
             data[PlayInfo.diff] = playResult;
-        }
-    }
-
-    public void SaveResult()
-    {
-        try
-        {
-            // 使用 Newtonsoft.Json 序列化
-            string json = JsonConvert.SerializeObject(Values.playerData, Formatting.Indented);
-            File.WriteAllText(Values.savePath, json);
-            Debug.Log("Results saved to: " + Values.savePath);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError("Failed to save results: " + e.Message);
         }
     }
 

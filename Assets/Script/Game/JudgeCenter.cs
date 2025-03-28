@@ -78,7 +78,7 @@ public class JudgeCenter : MonoBehaviour
         }
         referenceScore += 5;
 
-        comboText.text = combo.ToString() + 'x';
+        comboText.text = combo > 0 ? combo.ToString() : "";
         GameStats.acc = score / (float)referenceScore * 100;
         scoreText.text = GameStats.acc.ToString("F2") + '%';
     }

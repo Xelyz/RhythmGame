@@ -9,11 +9,9 @@ public class TouchInput : MonoBehaviour
     public JudgeCenter judgeCenter;
 
     int tap = 0;
-    int touch = 0;
     Vector2 cursorPos = new();
 
-    List<int> judgmentQueue = new();
-    internal List<int> holdJudgmentQueue = new();
+    public List<int> judgmentQueue = new();
 
     int pointer = 0;
 
@@ -47,7 +45,6 @@ public class TouchInput : MonoBehaviour
 
         UpdateJudgmentQueue();
         JudgeNotes();
-        JudgeHolding();
     }
 
     private void UpdateJudgmentQueue()
@@ -64,10 +61,6 @@ public class TouchInput : MonoBehaviour
             }
 
             judgmentQueue.Add(pointer);
-            if (notes[pointer].noteType == NoteType.Slide)
-            {
-                holdJudgmentQueue.Add(pointer);
-            }
 
             pointer++;
         }
@@ -76,7 +69,8 @@ public class TouchInput : MonoBehaviour
     private void JudgeNotes()
     {
         int time = GameManager.Instance.currentTime;
-        float judgeRadiusSquared = Values.JudgeRadius * Values.JudgeRadius;
+        float judgeRadiusSquared = Values.TapJudgeRadius * Values.TapJudgeRadius;
+        float blockRadiusSquared = Values.TapRadius * Values.TapRadius;
 
         // 使用数组而不是List来存储判定队列,减少内存分配
         int queueCount = judgmentQueue.Count;
@@ -91,8 +85,7 @@ public class TouchInput : MonoBehaviour
             if (note.timeStamp - time >= -Values.badWindow) break;
             missCount++;
 
-            judgeCenter.UpdateStat(Judgment.Miss);
-            judgeCenter.Show(Judgment.Miss);
+            JudgeFeedback(Judgment.Miss, null);
         }
 
         if (missCount > 0)
@@ -105,104 +98,84 @@ public class TouchInput : MonoBehaviour
         // 缓存常用变量
         Vector2 curPos = cursorPos;
 
-        for (int i = 0; i < queueCount;)
+        List<int> removeList = new();
+
+        for (int i = 0; i < queueCount; i++)
         {
             int n = judgmentQueue[i];
             Note note = notes[n];
             int timeDifference = note.timeStamp - time;
 
-            bool isJudged = false;
             Judgment judgment = Judgment.Miss;
 
-            if (tap > 0 && (note.position - curPos).sqrMagnitude < judgeRadiusSquared)
-            {
-                isJudged = true;
-                judgment = judgeCenter.Judge(timeDifference);
-                tap--;
-
-                if (note.noteType == NoteType.Tap)
-                {
-                    note.PopOut();
-                }
-            }
-            else if (timeDifference < 0 && note.noteType == NoteType.Tap)
+            if (timeDifference < 0)
             {
                 note.FadeOut();
+
+                if (note.type == NoteType.Block)
+                {
+                    if ((note.position - curPos).sqrMagnitude < blockRadiusSquared)
+                        judgment = Judgment.Miss;
+                        // some effects here
+                    else
+                        judgment = Judgment.Perfect;
+
+                    removeList.Add(i);
+
+                    JudgeFeedback(judgment, null);
+                }
             }
 
-            if (isJudged)
+            if (note.type == NoteType.Tap && tap <= 0)
             {
-                judgmentQueue.RemoveAt(i);
-                queueCount--;
-                judgeCenter.UpdateStat(judgment);
-                judgeCenter.Show(judgment);
+                continue;
             }
-            else
+
+            if ((note.position - curPos).sqrMagnitude < judgeRadiusSquared)
             {
-                i++;
+                if (note.type == NoteType.Drag)
+                {
+                    if (judgeCenter.Judge(timeDifference) != Judgment.Bad)
+                    {
+                        judgment = Judgment.Perfect;
+                        removeList.Add(i);
+
+                        if (timeDifference > 0)
+                            StartCoroutine(Util.DelayAction(() => JudgeFeedback(judgment, note), timeDifference / 1000f));
+                        else
+                            JudgeFeedback(judgment, note);
+                    }
+                }
+                if (note.type == NoteType.Tap)
+                {
+                    judgment = judgeCenter.Judge(timeDifference);
+                    tap--;
+                    removeList.Add(i);
+
+                    JudgeFeedback(judgment, note);
+                }
             }
+
+        }
+
+        for (int i = removeList.Count - 1; i >= 0; i--)
+        {
+            judgmentQueue.RemoveAt(removeList[i]);
         }
     }
 
-    private void JudgeHolding()
+    void JudgeFeedback(Judgment judgment, Note note)
     {
-        int time = GameManager.Instance.currentTime;
-        float holdingRadiusSquared = Values.HoldingRadius * Values.HoldingRadius;
-        Vector2 curPos = cursorPos; // 缓存光标位置
-        bool hasTouch = touch > 0;  // 缓存触摸状态
-        int count = holdJudgmentQueue.Count;
+        judgeCenter.UpdateStat(judgment);
+        judgeCenter.Show(judgment);
 
-        for (int i = 0; i < count;)
-        {
-            int n = holdJudgmentQueue[i];
-            Slide note = notes[n] as Slide;
-
-            if (note.timeStamp > time)
-            {
-                i++;
-                continue;
-            }
-
-            note.UpdatePosition(time, out Vector2 position);
-            float stop = note.timeStamp + note.duration;
-            bool isHolding = false;
-
-            // 只在有触摸时计算距离
-            if (hasTouch)
-            {
-                float sqrDist = (position - curPos).sqrMagnitude;
-                isHolding = sqrDist < holdingRadiusSquared;
-            }
-
-            if (time >= stop)
-            {
-                Judgment judgment = isHolding ? Judgment.Perfect : Judgment.Miss;
-                judgeCenter.UpdateStat(judgment);
-                judgeCenter.Show(judgment);
-                note.PopOut();
-                holdJudgmentQueue.RemoveAt(i);
-                count--;
-                continue;
-            }
-
-            // Update judgment periodically based on the note's beat interval
-            if ((time - note.timeStamp) > note.beatInterval * note.tick)
-            {
-                Judgment judgment = isHolding ? Judgment.Perfect : Judgment.Miss;
-                judgeCenter.UpdateStat(judgment);
-                judgeCenter.Show(judgment);
-                note.tick++;
-            }
-
-            i++;
-        }
+        note?.PopOut();
     }
 
     private void ProcessTouch()
     {
         foreach (Touch finger in Touch.activeTouches)
         {
-            touch += 1;
             if (finger.began)
             {
                 tap += 1;
@@ -216,15 +189,10 @@ public class TouchInput : MonoBehaviour
         {
             tap += 1;
         }
-        if (Keyboard.current.zKey.isPressed || Keyboard.current.xKey.isPressed)
-        {
-            touch += 1;
-        }
     }
 
     private void InitializeInputData()
     {
         tap = 0;
-        touch = 0;
     }
 }
