@@ -94,10 +94,10 @@ public class GameManager : MonoBehaviour
             return;
         }
     }
-    
+
     private bool IsGameFinished()
     {
-        return currentTime >= notes[^1].timeStamp && 
+        return currentTime >= notes[^1].timeStamp &&
                TouchInput.Instance.judgmentQueue.Count == 0;
     }
 
@@ -112,7 +112,7 @@ public class GameManager : MonoBehaviour
 
     private bool ShouldSpawnNextNote()
     {
-        return nextNoteIndex < notes.Count && 
+        return nextNoteIndex < notes.Count &&
                currentTime >= notes[nextNoteIndex].timeStamp - spawnTime;
     }
 
@@ -136,6 +136,15 @@ public class GameManager : MonoBehaviour
         audioSource.Stop();
 
         ShowScore();
+    }
+
+    // 当应用暂停状态改变时调用
+    private void OnApplicationPause(bool pause)
+    {
+        if (pause)
+        {
+            Pause();
+        }
     }
 
     public void Pause()

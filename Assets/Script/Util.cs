@@ -16,7 +16,9 @@ public static class Util
 
     public static IEnumerator DelayAction(Action action, float delaySeconds)
     {
+        Debug.Log("1");
         yield return new WaitForSeconds(delaySeconds);
+        Debug.Log("2");
         action?.Invoke();
     }
 
@@ -40,8 +42,8 @@ public static class Util
         }
     }
 
-    public static readonly int block = 1 << 3;
-    public static readonly int drag = 1 << 2;
+    private static readonly int block = 1 << 3;
+    private static readonly int drag = 1 << 2;
 
     struct NoteData
     {
