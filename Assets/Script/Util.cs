@@ -42,8 +42,8 @@ public static class Util
         }
     }
 
-    private static readonly int block = 1 << 3;
-    private static readonly int drag = 1 << 2;
+    private static readonly int block = 1 << 2;
+    private static readonly int drag = 1 << 1;
 
     struct NoteData
     {
