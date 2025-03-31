@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,12 +17,14 @@ public class GameManager : MonoBehaviour
 
     public Button pauseButton;
     public GameObject pausingPage;
+    public TextMeshProUGUI indicator;
 
     public int currentTime = 0;
     int spawnTime;
 
     public bool isGamePlaying = false;
     public bool isAudioPlaying = false;
+    public bool isPaused = false;
 
     void Awake()
     {
@@ -45,15 +49,21 @@ public class GameManager : MonoBehaviour
     {
         currentTime = -Values.waitTime; // Set currentTime to a negative value during the initial wait period
         isGamePlaying = true;
-        float startTime = Time.time;
-        while (Time.time - startTime < Values.waitTime / 1000f)
+        float elapsedTime = 0f;
+        
+        while (elapsedTime < Values.waitTime / 1000f)
         {
-            currentTime = (int)((Time.time - startTime) * 1000) - Values.waitTime;
+            if (!isPaused) // Only accumulate time when not paused
+            {
+                elapsedTime += Time.deltaTime;
+                currentTime = (int)(elapsedTime * 1000) - Values.waitTime;
+            }
             yield return null;
         }
+
         isAudioPlaying = true;
         audioSource.Play();
-        Debug.Log("Game Start");
+        audioSource.time = 0f;
     }
 
     private void LoadChart()
@@ -151,32 +161,54 @@ public class GameManager : MonoBehaviour
     {
         isGamePlaying = false;
         isAudioPlaying = false;
+        isPaused = true;
         audioSource.Pause();
-        Time.timeScale = 0f;
+        DOTween.PauseAll();
         pauseButton.gameObject.SetActive(false);
         pausingPage.SetActive(true);
     }
 
     public void Restart()
     {
-        Time.timeScale = 1f;
         DOTween.KillAll();
         Util.Transition("GameScene");
     }
 
     public void Resume()
     {
-        isGamePlaying = true;
-        isAudioPlaying = true;
-        audioSource.Play();
-        Time.timeScale = 1f;
-        pauseButton.gameObject.SetActive(true);
         pausingPage.SetActive(false);
+
+        void func()
+        {
+            DOTween.PlayAll();
+            isPaused = false;
+            isGamePlaying = true;
+            isAudioPlaying = true;
+            audioSource.UnPause();
+            pauseButton.gameObject.SetActive(true);
+        }
+
+        StartCoroutine(CountDown(2f));
+        StartCoroutine(Util.DelayAction(func, 2f));
+    }
+
+    private IEnumerator CountDown(float totalTime)
+    {
+        indicator.gameObject.SetActive(true);
+        float endTime = Time.time + totalTime;
+
+        while (Time.time < endTime)
+        {
+            int remainingSeconds = Mathf.CeilToInt(endTime - Time.time);
+            indicator.text = remainingSeconds.ToString();
+            yield return new WaitForSeconds(0.1f); // Update less frequently for better performance
+        }
+
+        indicator.gameObject.SetActive(false);
     }
 
     public void Quit()
     {
-        Time.timeScale = 1f;
         DOTween.KillAll();
         Util.Transition("SongSelectScene");
     }
