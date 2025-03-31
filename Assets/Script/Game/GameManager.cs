@@ -50,7 +50,7 @@ public class GameManager : MonoBehaviour
         currentTime = -Values.waitTime; // Set currentTime to a negative value during the initial wait period
         isGamePlaying = true;
         float elapsedTime = 0f;
-        
+
         while (elapsedTime < Values.waitTime / 1000f)
         {
             if (!isPaused) // Only accumulate time when not paused
@@ -159,6 +159,9 @@ public class GameManager : MonoBehaviour
 
     public void Pause()
     {
+        // pausing not allowed when game is not playing
+        if (!isGamePlaying) return;
+
         isGamePlaying = false;
         isAudioPlaying = false;
         isPaused = true;
