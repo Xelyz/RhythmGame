@@ -1954,7 +1954,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.7699752, y: 243.99997}
+  m_AnchoredPosition: {x: 17.4, y: 243.99997}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1256265169
@@ -2118,7 +2118,6 @@ MonoBehaviour:
   - {fileID: 49850979}
   - {fileID: 1931674719}
   - {fileID: 1256265167}
-  - {fileID: 2048660698}
   selectionBox: {fileID: 631953306}
   conductor: {fileID: 913692586}
 --- !u!1 &1394092941
@@ -2749,7 +2748,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -68.270004, y: 243.99997}
+  m_AnchoredPosition: {x: -57.7, y: 243.99997}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1931674721
@@ -3081,7 +3080,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2048660699
 RectTransform:
   m_ObjectHideFlags: 0

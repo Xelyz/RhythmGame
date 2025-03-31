@@ -43,8 +43,11 @@ public class TouchInput : MonoBehaviour
             ProcessMouse();
         }
 
-        UpdateJudgmentQueue();
-        JudgeNotes();
+        if (GameManager.Instance.isGamePlaying)
+        {
+            UpdateJudgmentQueue();
+            JudgeNotes();
+        }
     }
 
     private void UpdateJudgmentQueue()
@@ -116,7 +119,7 @@ public class TouchInput : MonoBehaviour
                 {
                     if ((note.position - curPos).sqrMagnitude < blockRadiusSquared)
                         judgment = Judgment.Miss;
-                        // some effects here
+                    // some effects here
                     else
                         judgment = Judgment.Perfect;
 

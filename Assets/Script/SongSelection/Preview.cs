@@ -75,7 +75,7 @@ public class Preview : MonoBehaviour
         }
 
         // 设置难度
-        for (int i = 0; i < meta.level.Length; i++)
+        for (int i = 0; i < meta.level.Count; i++)
         {
             string diff = meta.level[i];
             if (diff != "")
@@ -99,14 +99,7 @@ public class Preview : MonoBehaviour
         if (!diffElement[diff].activeSelf)
         {
             // Don't select if difficulty element is not active. Instead select the previous diff
-            int prevDiff = diff switch
-            {
-                0 => 3,
-                3 => 2,
-                2 => 1,
-                1 => 0,
-                _ => 0
-            };
+            int prevDiff = diff == 0 ? diffElement.Length - 1 : diff - 1;
             Select(prevDiff);
             return;
         }
