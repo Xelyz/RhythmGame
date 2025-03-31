@@ -37,7 +37,7 @@ public class Setting : MonoBehaviour
 
     void SetNoteSpeed(float value)
     {
-        Values.Preference.noteSpeed = value;
-        noteSpeedValue.text = value.ToString("0");
+        Values.Preference.noteSpeed = value / 2;
+        noteSpeedValue.text = (value / 10).ToString("F1");
     }
 }
