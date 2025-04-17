@@ -19,8 +19,8 @@ public class Setting : MonoBehaviour
         sensitivityValue.text = Values.Preference.sensitivity.ToString("F2");
 
         noteSpeedSlider.onValueChanged.AddListener(SetNoteSpeed);
-        noteSpeedSlider.value = Values.Preference.noteSpeed;
-        noteSpeedValue.text = Values.Preference.noteSpeed.ToString("0");
+        noteSpeedSlider.value = Values.Preference.noteSpeed * 2;
+        noteSpeedValue.text = (Values.Preference.noteSpeed / 5).ToString("F1");
     }
 
     void Return()

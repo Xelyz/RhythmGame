@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Linq;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 public class TouchInput : MonoBehaviour
 {
     List<Note> notes;
     public JudgeCenter judgeCenter;
+    List<ShakeEffect> shakeEffects;
 
     int tap = 0;
     Vector2 cursorPos = new();
@@ -26,6 +28,7 @@ public class TouchInput : MonoBehaviour
     void Start()
     {
         notes = GameManager.Instance.notes;
+        shakeEffects = FindObjectsByType<ShakeEffect>(FindObjectsSortMode.None).ToList();
     }
 
     // Update is called once per frame
@@ -118,10 +121,15 @@ public class TouchInput : MonoBehaviour
                 if (note.type == NoteType.Block)
                 {
                     if ((note.position - curPos).sqrMagnitude < blockRadiusSquared)
+                    {
                         judgment = Judgment.Miss;
-                    // some effects here
+                        // hit effects
+                        shakeEffects.ForEach((x) => x.TriggerShake());
+                    }
                     else
+                    {
                         judgment = Judgment.Perfect;
+                    }
 
                     removeList.Add(i);
 

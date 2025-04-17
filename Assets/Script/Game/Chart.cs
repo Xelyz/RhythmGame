@@ -24,6 +24,7 @@ public class Tap : Note
     public Transform head;
     public SpriteRenderer circle;
     public GameObject outerCircle;
+    NoteScroll scroll;
     public float radius;
 
     public bool isFading = false;
@@ -39,6 +40,7 @@ public class Tap : Note
         gameObject = NotePool.Instance.Get(type);
         head = gameObject.transform;
         circle = head.Find("Circle").GetComponent<SpriteRenderer>();
+        scroll = circle.gameObject.GetComponent<NoteScroll>();
         outerCircle = head.Find("OuterCircle").gameObject;
     }
 
@@ -57,6 +59,7 @@ public class Tap : Note
         {
             circle.DOKill();
             outerCircle.transform.DOKill();
+            scroll.isActive = false;
             circle.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
             circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad).OnComplete(Release);
         }
@@ -83,14 +86,18 @@ public class Tap : Note
         head.localPosition = new(position.x, position.y);
         head.localScale = new Vector3(radius, radius, 1f);
 
-        circle.DOFade(1f, 0.2f).From(0f).SetEase(Ease.Linear);
-
         Vector3 newPosition = circle.transform.position;
         newPosition.z = Values.planeDistance + animationDuration * Values.Preference.noteSpeed;
         circle.transform.position = newPosition;
 
+        Color color = circle.color;
+        color.a = 1f;
+        circle.color = color;
+
         circle.transform.localScale = new(1, 1, 1);
         circle.sortingOrder = -nthNote;
+
+        scroll.isActive = true;
 
         outerCircle.SetActive(true);
         SpriteRenderer outerSR = outerCircle.GetComponentInChildren<SpriteRenderer>();
