@@ -907,6 +907,7 @@ GameObject:
   m_Component:
   - component: {fileID: 344744945}
   - component: {fileID: 344744944}
+  - component: {fileID: 344744946}
   m_Layer: 0
   m_Name: Conductor
   m_TagString: Untagged
@@ -1026,6 +1027,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &344744946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 344744943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0def73d10136046e6bc86275a3612f59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  musicSource: {fileID: 0}
+  effectSource: {fileID: 0}
+  isAudioReady: 0
 --- !u!1 &386294459
 GameObject:
   m_ObjectHideFlags: 0
@@ -1621,7 +1637,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   noteHolder: {fileID: 1561456053}
-  audioSource: {fileID: 344744944}
   pauseButton: {fileID: 30580658}
   pausingPage: {fileID: 1622035159}
   indicator: {fileID: 326915747}

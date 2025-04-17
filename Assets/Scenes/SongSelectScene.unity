@@ -1526,6 +1526,7 @@ GameObject:
   m_Component:
   - component: {fileID: 913692587}
   - component: {fileID: 913692586}
+  - component: {fileID: 913692588}
   m_Layer: 0
   m_Name: Conductor
   m_TagString: Untagged
@@ -1645,6 +1646,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &913692588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 913692585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0def73d10136046e6bc86275a3612f59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isAudioReady: 0
 --- !u!1 &1007121545
 GameObject:
   m_ObjectHideFlags: 0
@@ -2119,7 +2133,6 @@ MonoBehaviour:
   - {fileID: 1931674719}
   - {fileID: 1256265167}
   selectionBox: {fileID: 631953306}
-  conductor: {fileID: 913692586}
 --- !u!1 &1394092941
 GameObject:
   m_ObjectHideFlags: 0

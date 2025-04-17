@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     public List<Note> notes = new();
     public Transform noteHolder;
 
-    public AudioSource audioSource;
+    private AudioSource AudioSource => AudioManager.Instance.musicSource;
 
     public Button pauseButton;
     public GameObject pausingPage;
@@ -33,14 +33,20 @@ public class GameManager : MonoBehaviour
 
         spawnTime = Values.spawnTime;
         LoadChart();
-        audioSource.clip = Resources.Load<AudioClip>($"songs/{PlayInfo.meta.id}/track");
-        audioSource.clip.LoadAudioData();
+        StartCoroutine(AudioManager.Instance.InitGameMusic(PlayInfo.meta.id));
     }
 
     void Start()
     {
-        audioSource.Pause();
-        audioSource.time = 0f;
+        StartCoroutine(WaitForComponentsReady());
+    }
+
+    IEnumerator WaitForComponentsReady()
+    {
+        while (!AudioManager.Instance.isAudioReady)
+        {
+            yield return null;
+        }
 
         StartCoroutine(GameStart());
     }
@@ -62,8 +68,8 @@ public class GameManager : MonoBehaviour
         }
 
         isAudioPlaying = true;
-        audioSource.Play();
-        audioSource.time = 0f;
+        AudioSource.Play();
+        AudioSource.time = 0f;
     }
 
     private void LoadChart()
@@ -95,7 +101,7 @@ public class GameManager : MonoBehaviour
 
         if (!isAudioPlaying) return;
 
-        currentTime = (int)(audioSource.time * 1000);
+        currentTime = (int)(AudioSource.time * 1000);
 
         // 检查游戏是否结束
         if (IsGameFinished())
@@ -131,19 +137,19 @@ public class GameManager : MonoBehaviour
         isGamePlaying = false;
 
         // 2秒音乐渐隐
-        float startVolume = audioSource.volume;
+        float startVolume = AudioSource.volume;
         float duration = 2f;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            audioSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+            AudioSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
             yield return null;
         }
 
         isAudioPlaying = false;
-        audioSource.Stop();
+        AudioSource.Stop();
 
         ShowScore();
     }
@@ -165,7 +171,7 @@ public class GameManager : MonoBehaviour
         isGamePlaying = false;
         isAudioPlaying = false;
         isPaused = true;
-        audioSource.Pause();
+        AudioSource.Pause();
         DOTween.PauseAll();
         pauseButton.gameObject.SetActive(false);
         pausingPage.SetActive(true);
@@ -187,7 +193,7 @@ public class GameManager : MonoBehaviour
             isPaused = false;
             isGamePlaying = true;
             isAudioPlaying = true;
-            audioSource.UnPause();
+            AudioSource.UnPause();
             pauseButton.gameObject.SetActive(true);
         }
 

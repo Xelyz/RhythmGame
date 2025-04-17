@@ -13,7 +13,7 @@ public class Preview : MonoBehaviour
     public Sprite placeholderSprite;
     public GameObject[] diffElement;
     public GameObject selectionBox;
-    public AudioSource conductor;
+    private AudioSource Conductor => AudioManager.Instance.musicSource;
 
     private Dictionary<string, AudioClip> audioCache = new();
     private Dictionary<string, Sprite> jacketCache = new();
@@ -64,10 +64,10 @@ public class Preview : MonoBehaviour
         // 播放音乐
         if (audioCache.TryGetValue(meta.id, out AudioClip clip))
         {
-            conductor.clip = clip;
-            conductor.Stop();
-            conductor.time = meta.previewStart / 1000f;
-            conductor.Play();
+            Conductor.clip = clip;
+            Conductor.Stop();
+            Conductor.time = meta.previewStart / 1000f;
+            Conductor.Play();
         }
         else
         {

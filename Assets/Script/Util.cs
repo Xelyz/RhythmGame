@@ -12,6 +12,8 @@ public static class Util
         Transfer.fromScene = SceneManager.GetActiveScene().name;
         Transfer.toScene = toScene;
         SceneManager.LoadScene("LoadingScene", LoadSceneMode.Additive);
+
+        AudioManager.Instance.Clear();
     }
 
     public static IEnumerator DelayAction(Action action, float delaySeconds)
