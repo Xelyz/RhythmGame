@@ -179,6 +179,7 @@ public class TouchInput : MonoBehaviour
     {
         judgeCenter.UpdateStat(judgment);
         judgeCenter.Show(judgment);
+        AudioManager.Instance.PlayEffect("Hit");
 
         note?.PopOut();
     }

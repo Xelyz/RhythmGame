@@ -13,7 +13,7 @@ public static class Util
         Transfer.toScene = toScene;
         SceneManager.LoadScene("LoadingScene", LoadSceneMode.Additive);
 
-        AudioManager.Instance.Clear();
+        AudioManager.Instance.ClearMusic();
     }
 
     public static IEnumerator DelayAction(Action action, float delaySeconds)
