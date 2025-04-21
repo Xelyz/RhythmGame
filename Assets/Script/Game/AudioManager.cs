@@ -73,7 +73,9 @@ public class AudioManager : MonoBehaviour
             yield break;
         }
 
+        loadedClip.LoadAudioData();
         musicSource.clip = loadedClip;
+        
         isAudioReady = true;
         Debug.Log($"AudioManager: Music '{songFolderId}' loaded successfully.");
     }

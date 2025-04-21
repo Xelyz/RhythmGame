@@ -18,9 +18,7 @@ public static class Util
 
     public static IEnumerator DelayAction(Action action, float delaySeconds)
     {
-        Debug.Log("1");
         yield return new WaitForSeconds(delaySeconds);
-        Debug.Log("2");
         action?.Invoke();
     }
 
