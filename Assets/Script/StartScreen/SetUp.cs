@@ -22,11 +22,11 @@ public class SetUp : MonoBehaviour
 
     void LoadPlayData()
     {
-        if (File.Exists(Values.savePath))
+        if (File.Exists(Values.SavePath))
         {
             try
             {
-                string json = File.ReadAllText(Values.savePath);
+                string json = File.ReadAllText(Values.SavePath);
                 var loadedData = JsonConvert.DeserializeObject<PlayerData>(json);
                 if (loadedData != null)
                 {
@@ -36,7 +36,7 @@ public class SetUp : MonoBehaviour
                 {
                     Values.playerData = new();
                 }
-                Debug.Log("PlayData loaded from: " + Values.savePath);
+                Debug.Log("PlayData loaded from: " + Values.SavePath);
             }
             catch (System.Exception e)
             {

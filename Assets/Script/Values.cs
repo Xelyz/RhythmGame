@@ -3,30 +3,44 @@ using UnityEngine;
 
 public static class Values
 {
+    // 存档相关
     public static bool accAvail = false;
-    public static string savePath = Path.Combine(Application.persistentDataPath, "playResults.json");
+    private static string _savePath;
+    public static string SavePath
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_savePath))
+            {
+                _savePath = Path.Combine(Application.persistentDataPath, "playResults.json");
+            }
+            return _savePath;
+        }
+    }
     public static PlayerData playerData = new();
     public static Preference Preference => playerData.preference;
 
-    public static float planeDistance = 5f;
-    public static float TapRadius = 40f;
-    public static float DragRadius = 30f;
+    // 判定相关
+    public static float tapRadius = 40f;
+    public static float dragRadius = 30f;
     public static float judgeLeniency = 15f;
-    public static float TapJudgeRadius => TapRadius + judgeLeniency;
-    public static float HoldingRadius => TapRadius * 2;
+    public static float TapJudgeRadius => tapRadius + judgeLeniency;
+    public static float HoldingRadius => tapRadius * 2;
 
-    public static float fullTiltAngle = 60;
-
+    // 游戏参数
+    public static float planeDistance = 5f;
+    public static float fullTiltAngle = 60f;
+    
+    // 时间窗口
     public static int waitTime = 2000;
     public static int spawnTime = 1500;
-
-    public static int prefectWindow = 60;
+    public static int perfectWindow = 60;
     public static int goodWindow = 90;
     public static int badWindow = 120;
 
-    public static float canvasHalfHeight = 320;
-    public static float canvasHalfWidth = 240;
-
+    // 画布尺寸
+    public static float canvasHalfHeight = 320f;
+    public static float canvasHalfWidth = 240f;
     public static int noteHolderWidth = 512;
     public static int noteHolderHeight = 384;
 }

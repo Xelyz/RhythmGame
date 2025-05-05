@@ -33,8 +33,8 @@ public static class Util
         {
             // 使用 Newtonsoft.Json 序列化
             string json = JsonConvert.SerializeObject(Values.playerData, Formatting.Indented);
-            File.WriteAllText(Values.savePath, json);
-            Debug.Log("Results saved to: " + Values.savePath);
+            File.WriteAllText(Values.SavePath, json);
+            Debug.Log("Results saved to: " + Values.SavePath);
         }
         catch (System.Exception e)
         {

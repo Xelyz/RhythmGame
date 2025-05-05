@@ -32,7 +32,7 @@ public class Tap : Note
     public Tap()
     {
         type = NoteType.Tap;
-        radius = Values.TapRadius;
+        radius = Values.tapRadius;
     }
 
     protected virtual void GetObjects()
@@ -78,7 +78,7 @@ public class Tap : Note
     public override void Initialize(Transform noteHolder)
     {
         GetObjects();
-        float animationDuration = (timeStamp - GameManager.Instance.currentTime) / 1000f;
+        float animationDuration = (timeStamp - GameManager.Instance.gameState.CurrentTime) / 1000f;
 
         gameObject.transform.SetParent(noteHolder);
         gameObject.transform.localPosition = Vector3.zero;
@@ -114,7 +114,7 @@ public class Drag : Tap
     public Drag()
     {
         type = NoteType.Drag;
-        radius = Values.DragRadius;
+        radius = Values.dragRadius;
     }
 }
 
@@ -123,7 +123,7 @@ public class Block : Tap
     public Block()
     {
         type = NoteType.Block;
-        radius = Values.TapRadius;
+        radius = Values.tapRadius;
     }
 }
 

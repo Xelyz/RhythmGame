@@ -2,74 +2,63 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public List<Note> notes = new();
-    public Transform noteHolder;
+    [SerializeField] private Transform noteHolder;
+    [SerializeField] private GameUI gameUI;
 
-    private AudioSource AudioSource => AudioManager.Instance.musicSource;
+    private AudioManager audioController;
+    internal GameState gameState;
+    internal List<Note> notes = new();  // Changed to internal
+    private int nextNoteIndex = 0;
+    private int spawnTime;
 
-    public Button pauseButton;
-    public GameObject pausingPage;
-    public TextMeshProUGUI indicator;
-
-    public int currentTime = 0;
-    int spawnTime;
-
-    public bool isGamePlaying = false;
-    public bool isAudioPlaying = false;
-    public bool isPaused = false;
-
-    void Awake()
+    private void Awake()
     {
         Instance = this;
-        Resources.UnloadUnusedAssets();
-
+        gameState = new GameState();
+        audioController = FindFirstObjectByType<AudioManager>();
+        
         spawnTime = Values.spawnTime;
         LoadChart();
-        StartCoroutine(AudioManager.Instance.InitGameMusic(PlayInfo.meta.id));
+        StartCoroutine(audioController.InitGameMusic(PlayInfo.meta.id));
     }
 
-    void Start()
+    private void Start()
     {
         StartCoroutine(WaitForComponentsReady());
     }
 
-    IEnumerator WaitForComponentsReady()
+    private IEnumerator WaitForComponentsReady()
     {
-        while (!AudioManager.Instance.isAudioReady)
+        while (!audioController.isAudioReady)
         {
             yield return null;
         }
-
         StartCoroutine(GameStart());
     }
 
-    IEnumerator GameStart()
+    private IEnumerator GameStart()
     {
-        currentTime = -Values.waitTime; // Set currentTime to a negative value during the initial wait period
-        isGamePlaying = true;
+        gameState.StartGame();
         float elapsedTime = 0f;
 
         while (elapsedTime < Values.waitTime / 1000f)
         {
-            if (!isPaused) // Only accumulate time when not paused
+            if (!gameState.IsPaused)
             {
                 elapsedTime += Time.deltaTime;
-                currentTime = (int)(elapsedTime * 1000) - Values.waitTime;
+                gameState.CurrentTime = (int)(elapsedTime * 1000) - Values.waitTime;
             }
             yield return null;
         }
 
-        isAudioPlaying = true;
-        AudioSource.Play();
-        AudioSource.time = 0f;
+        gameState.StartAudio();
+        audioController.Play();
     }
 
     private void LoadChart()
@@ -90,30 +79,27 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private int nextNoteIndex = 0;
-
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        if (!isGamePlaying) return;
+        if (!gameState.IsPlaying) return;
 
         SpawnNotes();
-
-        if (!isAudioPlaying) return;
-
-        currentTime = (int)(AudioSource.time * 1000);
-
-        // 检查游戏是否结束
-        if (IsGameFinished())
+        
+        if (gameState.IsAudioPlaying)
         {
-            StartCoroutine(EndGame());
-            return;
+            gameState.CurrentTime = (int)(audioController.CurrentTime * 1000);
+            
+            if (IsGameFinished())
+            {
+                StartCoroutine(EndGame());
+            }
         }
     }
 
     private bool IsGameFinished()
     {
-        return currentTime >= notes[^1].timeStamp &&
+        return gameState.CurrentTime >= notes[^1].timeStamp &&
                TouchInput.Instance.judgmentQueue.Count == 0;
     }
 
@@ -129,27 +115,27 @@ public class GameManager : MonoBehaviour
     private bool ShouldSpawnNextNote()
     {
         return nextNoteIndex < notes.Count &&
-               currentTime >= notes[nextNoteIndex].timeStamp - spawnTime;
+               gameState.CurrentTime >= notes[nextNoteIndex].timeStamp - spawnTime;
     }
 
     private IEnumerator EndGame()
     {
-        isGamePlaying = false;
+        gameState.EndGame();
 
         // 2秒音乐渐隐
-        float startVolume = AudioSource.volume;
+        float startVolume = audioController.musicSource.volume;
         float duration = 2f;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            AudioSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+            audioController.musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
             yield return null;
         }
 
-        isAudioPlaying = false;
-        AudioSource.Stop();
+        gameState.EndAudio();
+        audioController.Stop();
 
         ShowScore();
     }
@@ -165,65 +151,51 @@ public class GameManager : MonoBehaviour
 
     public void Pause()
     {
-        // pausing not allowed when game is not playing
-        if (!isGamePlaying) return;
+        if (!gameState.IsPlaying) return;
 
-        isGamePlaying = false;
-        isAudioPlaying = false;
-        isPaused = true;
-        AudioSource.Pause();
+        gameState.Pause();
+        audioController.Pause();
         DOTween.PauseAll();
-        pauseButton.gameObject.SetActive(false);
-        pausingPage.SetActive(true);
-    }
-
-    public void Restart()
-    {
-        DOTween.KillAll();
-        Util.Transition("GameScene");
+        gameUI.ShowPauseUI();
     }
 
     public void Resume()
     {
-        pausingPage.SetActive(false);
-
-        void func()
-        {
+        StartCoroutine(gameUI.ShowCountdown(2f));
+        StartCoroutine(Util.DelayAction(() => {
+            gameState.Resume();
+            audioController.UnPause();
             DOTween.PlayAll();
-            isPaused = false;
-            isGamePlaying = true;
-            isAudioPlaying = true;
-            AudioSource.UnPause();
-            pauseButton.gameObject.SetActive(true);
-        }
-
-        StartCoroutine(CountDown(2f));
-        StartCoroutine(Util.DelayAction(func, 2f));
+            gameUI.ShowResumeUI();
+        }, 2f));
     }
 
-    private IEnumerator CountDown(float totalTime)
+    public void Restart()
     {
-        indicator.gameObject.SetActive(true);
-        float endTime = Time.time + totalTime;
-
-        while (Time.time < endTime)
-        {
-            int remainingSeconds = Mathf.CeilToInt(endTime - Time.time);
-            indicator.text = remainingSeconds.ToString();
-            yield return new WaitForSeconds(0.1f); // Update less frequently for better performance
-        }
-
-        indicator.gameObject.SetActive(false);
+        StopAllCoroutines();
+        OnDisable();
+        Util.Transition("GameScene");
     }
 
     public void Quit()
     {
-        DOTween.KillAll();
+        StopAllCoroutines();
+        OnDisable();
         Util.Transition("SongSelectScene");
     }
 
     public void ShowScore()
     {
         Util.Transition("ScoreScene");
+    }
+
+    private void OnDisable()
+    {
+        // 确保清理所有动画和音频
+        DOTween.KillAll();
+        if (audioController != null)
+        {
+            audioController.Stop();
+        }
     }
 }

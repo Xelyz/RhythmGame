@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Collections;
 
 public class Preview : MonoBehaviour
 {
@@ -15,8 +16,8 @@ public class Preview : MonoBehaviour
     public GameObject selectionBox;
     private AudioSource Conductor => AudioManager.Instance.musicSource;
 
-    private Dictionary<string, AudioClip> audioCache = new();
-    private Dictionary<string, Sprite> jacketCache = new();
+    private static Dictionary<string, AudioClip> audioCache = new();
+    private static Dictionary<string, Sprite> jacketCache = new();
 
     void Start()
     {
@@ -29,28 +30,35 @@ public class Preview : MonoBehaviour
 
     public void PreloadResources(string id)
     {
-        // 预加载音频
-        var audioClip = Resources.Load<AudioClip>($"Songs/{id}/track");
-        if (audioClip != null)
+        string audioPath = $"Songs/{id}/track";
+        string jacketPath = $"Songs/{id}/jacket";
+
+        // 使用协程异步加载资源
+        StartCoroutine(LoadResources(id, audioPath, jacketPath));
+    }
+
+    private IEnumerator LoadResources(string id, string audioPath, string jacketPath)
+    {
+        // 加载音频
+        var audioRequest = Resources.LoadAsync<AudioClip>(audioPath);
+        yield return audioRequest;
+        
+        if (audioRequest.asset != null)
         {
+            var audioClip = audioRequest.asset as AudioClip;
             audioCache[id] = audioClip;
             audioClip.LoadAudioData();
         }
         else
         {
-            Debug.LogError($"未能加载音频文件: {id}");
+            Debug.LogError($"Failed to load audio: {audioPath}");
         }
 
-        // 预加载封面图片
-        var jacketSprite = Resources.Load<Sprite>($"Songs/{id}/jacket");
-        if (jacketSprite != null)
-        {
-            jacketCache[id] = jacketSprite;
-        }
-        else
-        {
-            jacketCache[id] = placeholderSprite;
-        }
+        // 加载封面
+        var jacketRequest = Resources.LoadAsync<Sprite>(jacketPath);
+        yield return jacketRequest;
+        
+        jacketCache[id] = jacketRequest.asset as Sprite ?? placeholderSprite;
     }
 
     public void UpdatePreview(Meta meta)
