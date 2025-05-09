@@ -41,7 +41,7 @@ public class Tap : Note
         head = gameObject.transform;
         circle = head.Find("Circle").GetComponent<SpriteRenderer>();
         scroll = circle.gameObject.GetComponent<NoteScroll>();
-        outerCircle = head.Find("OuterCircle").gameObject;
+        outerCircle = head.Find("OuterCircle")?.gameObject;
     }
 
     public override void FadeOut()
@@ -49,7 +49,7 @@ public class Tap : Note
         if (gameObject != null && !isFading)
         {
             isFading = true;
-            circle.DOFade(0, 0.15f).OnComplete(Release);
+            circle.DOFade(0, 0.1f).OnComplete(Release);
         }
     }
 
@@ -58,7 +58,7 @@ public class Tap : Note
         if (gameObject != null)
         {
             circle.DOKill();
-            outerCircle.transform.DOKill();
+            if (outerCircle != null) outerCircle.transform.DOKill();
             scroll.isActive = false;
             circle.DOFade(0f, 0.1f).SetEase(Ease.OutQuad);
             circle.transform.DOScale(1.5f, 0.1f).SetEase(Ease.OutQuad).OnComplete(Release);
@@ -70,7 +70,7 @@ public class Tap : Note
         if (gameObject != null)
         {
             circle.DOKill();
-            outerCircle.transform.DOKill();
+            if (outerCircle != null) outerCircle.transform.DOKill();
             NotePool.Instance.Release(type, gameObject);
         }
     }
@@ -99,11 +99,14 @@ public class Tap : Note
 
         scroll.isActive = true;
 
-        outerCircle.SetActive(true);
-        SpriteRenderer outerSR = outerCircle.GetComponentInChildren<SpriteRenderer>();
-        outerSR.DOFade(0.8f, 0.7f).From(0f).SetDelay(animationDuration - 0.7f).SetEase(Ease.Linear);
+        if (outerCircle != null)
+        {
+            outerCircle.SetActive(true);
+            SpriteRenderer outerSR = outerCircle.GetComponentInChildren<SpriteRenderer>();
+            outerSR.DOFade(0.8f, 0.7f).From(0f).SetDelay(animationDuration - 0.7f).SetEase(Ease.Linear);
 
-        outerCircle.transform.DOScale(1f, animationDuration).From(1.8f).SetEase(Ease.Linear).OnKill(() => outerCircle.SetActive(false));
+            outerCircle.transform.DOScale(1f, animationDuration).From(1.8f).SetEase(Ease.Linear).OnKill(() => outerCircle.SetActive(false));
+        }
 
         isFading = false;
     }

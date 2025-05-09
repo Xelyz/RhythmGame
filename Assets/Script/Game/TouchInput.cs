@@ -123,11 +123,8 @@ public class TouchInput : MonoBehaviour
                     break;
                     
                 case NoteType.Tap:
-                    if (tap > 0)
-                    {
-                        shouldRemove = ProcessTapNote(note, time, distanceSquared);
-                        if (shouldRemove) tap--;
-                    }
+                    shouldRemove = ProcessTapNote(note, time, distanceSquared);
+                    if (shouldRemove) tap--;
                     break;
                     
                 case NoteType.Drag:
@@ -168,15 +165,22 @@ public class TouchInput : MonoBehaviour
 
     private bool ProcessTapNote(Note note, int time, float distanceSquared)
     {
+        if (note.timeStamp - time <= 0) note.FadeOut();
+
+        if (tap <= 0) return false;
         if (distanceSquared >= judgeRadiusSquared) return false;
         
         Judgment judgment = judgeCenter.Judge(note.timeStamp - time);
         JudgeFeedback(judgment, note);
+        tap--;
+
         return true;
     }
 
     private bool ProcessDragNote(Note note, int time, float distanceSquared)
     {
+        if (note.timeStamp - time <= 0) note.FadeOut();
+
         if (distanceSquared >= judgeRadiusSquared) return false;
         
         int timeDifference = note.timeStamp - time;
