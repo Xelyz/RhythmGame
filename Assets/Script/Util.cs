@@ -11,6 +11,7 @@ public static class Util
     {
         Transfer.fromScene = SceneManager.GetActiveScene().name;
         Transfer.toScene = toScene;
+        Transfer.sceneReady = false;
         SceneManager.LoadScene("LoadingScene", LoadSceneMode.Additive);
 
         AudioManager.Instance.ClearMusic();

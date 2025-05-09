@@ -14,6 +14,7 @@ public class Preview : MonoBehaviour
     public Sprite placeholderSprite;
     public GameObject[] diffElement;
     public GameObject selectionBox;
+
     private AudioSource Conductor => AudioManager.Instance.musicSource;
 
     private static Dictionary<string, AudioClip> audioCache = new();
@@ -28,13 +29,12 @@ public class Preview : MonoBehaviour
         }
     }
 
-    public void PreloadResources(string id)
+    public Coroutine PreloadResources(string id)
     {
         string audioPath = $"Songs/{id}/track";
         string jacketPath = $"Songs/{id}/jacket";
-
         // 使用协程异步加载资源
-        StartCoroutine(LoadResources(id, audioPath, jacketPath));
+        return StartCoroutine(LoadResources(id, audioPath, jacketPath));
     }
 
     private IEnumerator LoadResources(string id, string audioPath, string jacketPath)

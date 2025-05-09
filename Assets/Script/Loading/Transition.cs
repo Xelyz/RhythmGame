@@ -39,12 +39,12 @@ public class Transition : MonoBehaviour
 
         // 等待加载完成
         yield return new WaitUntil(() => operation.progress >= 0.9f);
+        operation.allowSceneActivation = true;
+        yield return new WaitUntil(() => Transfer.sceneReady);
 
         // 使用DOTween滑出动画
         transitionPanel.DOAnchorPos(START_POSITION, SLIDE_DURATION)
             .SetEase(Ease.InCubic)
             .OnComplete(() => SceneManager.UnloadSceneAsync("LoadingScene"));
-            
-        operation.allowSceneActivation = true;
     }
 }

@@ -39,6 +39,8 @@ public class GameManager : MonoBehaviour
         {
             yield return null;
         }
+
+        Transfer.sceneReady = true;
         StartCoroutine(GameStart());
     }
 

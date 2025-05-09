@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Unnamed
+  m_text: Acouasm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -613,6 +613,7 @@ GameObject:
   - component: {fileID: 1316365581}
   - component: {fileID: 1316365580}
   - component: {fileID: 1316365582}
+  - component: {fileID: 1316365583}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -657,6 +658,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b9f4a32580c949b1bc4971215457926, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1316365583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1316365579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a28d58ecd1acc425dbf595dfa680a9fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1467619028

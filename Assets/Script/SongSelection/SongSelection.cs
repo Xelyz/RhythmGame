@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -16,8 +17,7 @@ public class SongSelection : MonoBehaviour
     void Start()
     {
         InitializeComponents();
-        LoadSongs();
-        ShowSelectedSong();
+        StartCoroutine(LoadSongs());
     }
 
     private void InitializeComponents()
@@ -36,13 +36,13 @@ public class SongSelection : MonoBehaviour
         Util.Transition("SettingScene");
     }
 
-    private void LoadSongs()
+    private IEnumerator LoadSongs()
     {
         var songListJson = Resources.Load<TextAsset>("SongList");
         if (songListJson == null)
         {
             Debug.LogError("未能加载歌曲列表");
-            return;
+            yield break;
         }
 
         var collection = JsonUtility.FromJson<SongCollection>(songListJson.text);
@@ -57,6 +57,28 @@ public class SongSelection : MonoBehaviour
             .Select(id => LoadSongMeta(id))
             .Where(meta => meta != null)
             .ToList();
+
+        Debug.Log("开始预加载所有歌曲资源...");
+        List<Coroutine> preloadCoroutines = new();
+        foreach (var id in collection.songs)
+        {
+            if (!string.IsNullOrEmpty(id)) // Basic check for valid ID
+            {
+                // PreloadResources should return a Coroutine
+                preloadCoroutines.Add(preview.PreloadResources(id));
+            }
+        }
+
+        // Wait for all preloading coroutines to finish
+        foreach (var coroutine in preloadCoroutines)
+        {
+            yield return coroutine;
+        }
+
+        Debug.Log("所有歌曲资源预加载完成!");
+
+        Transfer.sceneReady = true;
+        ShowSelectedSong();
     }
 
     private Meta LoadSongMeta(string id)
