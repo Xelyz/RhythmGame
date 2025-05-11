@@ -72,6 +72,7 @@ public class Tap : Note
             circle.DOKill();
             if (outerCircle != null) outerCircle.transform.DOKill();
             NotePool.Instance.Release(type, gameObject);
+            gameObject = null;
         }
     }
 
