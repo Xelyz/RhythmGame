@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
 
     private AudioManager audioController;
     internal GameState gameState;
-    internal List<Note> notes = new();  // Changed to internal
+    internal List<Note> notes = new();
     private int nextNoteIndex = 0;
     private int spawnTime;
 
@@ -81,7 +81,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
     private void Update()
     {
         if (!gameState.IsPlaying) return;
@@ -163,12 +162,13 @@ public class GameManager : MonoBehaviour
 
     public void Resume()
     {
+        gameUI.HidePauseUI();
+                
         StartCoroutine(gameUI.ShowCountdown(2f));
         StartCoroutine(Util.DelayAction(() => {
             gameState.Resume();
             audioController.UnPause();
             DOTween.PlayAll();
-            gameUI.ShowResumeUI();
         }, 2f));
     }
 

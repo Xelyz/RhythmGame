@@ -15,7 +15,7 @@ public class GameUI : MonoBehaviour
         pausingPage.SetActive(true);
     }
 
-    public void ShowResumeUI()
+    public void HidePauseUI()
     {
         pausingPage.SetActive(false);
         pauseButton.gameObject.SetActive(true);
