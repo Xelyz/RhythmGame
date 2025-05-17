@@ -103,6 +103,7 @@ public class AudioManager : MonoBehaviour
             if (!effectClips.ContainsKey(clip.name))
             {
                 effectClips.Add(clip.name, clip);
+                clip.LoadAudioData();
             }
             else
             {
@@ -166,33 +167,21 @@ public class AudioManager : MonoBehaviour
 
     public void Play()
     {
-        if (musicSource != null && musicSource.clip != null)
-        {
-            musicSource.Play();
-        }
+        musicSource?.Play();
     }
 
     public void Pause()
     {
-        if (musicSource != null)
-        {
-            musicSource.Pause();
-        }
+        musicSource?.Pause();
     }
 
     public void UnPause()
     {
-        if (musicSource != null)
-        {
-            musicSource.UnPause();
-        }
+        musicSource?.UnPause();
     }
 
     public void Stop()
     {
-        if (musicSource != null)
-        {
-            musicSource.Stop();
-        }
+        musicSource?.Stop();
     }
 }

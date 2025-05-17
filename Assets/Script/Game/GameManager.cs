@@ -49,12 +49,12 @@ public class GameManager : MonoBehaviour
         gameState.StartGame();
         float elapsedTime = 0f;
 
-        while (elapsedTime < Values.waitTime / 1000f)
+        while (elapsedTime * 1000f < Values.waitTime)
         {
             if (!gameState.IsPaused)
             {
                 elapsedTime += Time.deltaTime;
-                gameState.CurrentTime = (int)(elapsedTime * 1000) - Values.waitTime;
+                gameState.CurrentTime = (int)(elapsedTime * 1000) - Values.waitTime + Values.Preference.offsetms;
             }
             yield return null;
         }
@@ -89,7 +89,7 @@ public class GameManager : MonoBehaviour
         
         if (gameState.IsAudioPlaying)
         {
-            gameState.CurrentTime = (int)(audioController.CurrentTime * 1000);
+            gameState.CurrentTime = (int)(audioController.CurrentTime * 1000) + Values.Preference.offsetms;
             
             if (IsGameFinished())
             {
