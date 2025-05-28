@@ -21,9 +21,9 @@ public static class Values
     public static Preference Preference => playerData.preference;
 
     // 判定相关
-    public static float tapRadius = 40f;
-    public static float dragRadius = 30f;
-    public static float judgeLeniency = 15f;
+    public static float tapRadius = 35f;
+    public static float dragRadius = 25f;
+    public static float judgeLeniency = 20f;
     public static float TapJudgeRadius => tapRadius + judgeLeniency;
     public static float HoldingRadius => tapRadius * 2;
 
