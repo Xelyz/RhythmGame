@@ -1427,6 +1427,7 @@ GameObject:
   - component: {fileID: 1078942955}
   - component: {fileID: 1078942954}
   - component: {fileID: 1078942953}
+  - component: {fileID: 1078942956}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -1461,8 +1462,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c978c04c6a5344f028154a391eaa7137, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  judgeCenter: {fileID: 1078942954}
-  judgmentQueue: 
 --- !u!114 &1078942954
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1493,6 +1492,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   noteHolder: {fileID: 1561456053}
   gameUI: {fileID: 1928814622}
+--- !u!114 &1078942956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1078942950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b69c474d7ac946eb9751511c9ccfd84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  judgeCenter: {fileID: 1078942954}
 --- !u!1 &1214863811
 GameObject:
   m_ObjectHideFlags: 0
@@ -2433,6 +2445,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   circle: {fileID: 707248340}
   canvas: {fileID: 9184849}
+  smoothFactor: 0.8
+  trailStartColor: {r: 0.6901961, g: 1, b: 0.53333336, a: 1}
+  trailEndColor: {r: 1, g: 1, b: 1, a: 0}
+  trailTime: 0.1
+  trailWidthMultiplier: 1
 --- !u!4 &1948918966
 Transform:
   m_ObjectHideFlags: 0
