@@ -119,6 +119,12 @@ public class NoteJudge : MonoBehaviour
             Note note = notes[judgmentQueue[i]];
             float distanceSquared = (note.position - cursorPosition).sqrMagnitude;
             
+            // 统一处理FadeOut
+            if (note.timeStamp - time <= 0)
+            {
+                note.FadeOut();
+            }
+            
             bool shouldRemove = false;
             switch (note.type)
             {
@@ -175,8 +181,6 @@ public class NoteJudge : MonoBehaviour
 
     private bool ProcessTapNote(Note note, int time, float distanceSquared)
     {
-        if (note.timeStamp - time <= 0) note.FadeOut();
-
         if (distanceSquared >= judgeRadiusSquared) return false;
         
         Judgment judgment = judgeCenter.Judge(note.timeStamp - time);
@@ -189,7 +193,6 @@ public class NoteJudge : MonoBehaviour
     {
         if (note.timeStamp - time >= 0) return false;
         
-        note.FadeOut();
         if (distanceSquared < blockRadiusSquared)
         {
             JudgeFeedback(Judgment.Miss, null);
@@ -205,8 +208,6 @@ public class NoteJudge : MonoBehaviour
 
     private bool ProcessDragNote(Note note, int time, float distanceSquared)
     {
-        if (note.timeStamp - time <= 0) note.FadeOut();
-
         if (distanceSquared >= judgeRadiusSquared) return false;
         
         int timeDifference = note.timeStamp - time;

@@ -9,7 +9,7 @@ public class SetUp : MonoBehaviour
     void Awake()
     {
         EnhancedTouchSupport.Enable();
-        if (GravitySensor.current != null)
+        if (AttitudeSensor.current != null)
         {
             Values.accAvail = true;
         }

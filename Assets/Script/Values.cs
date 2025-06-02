@@ -29,7 +29,7 @@ public static class Values
 
     // 游戏参数
     public static float planeDistance = 5f;
-    public static float fullTiltAngle = 60f;
+    public static float fullTiltAngle = 45f;
     
     // 时间窗口
     public static int waitTime = 2000;
