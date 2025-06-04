@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
+using TMPro;
+using UnityEngine.Tilemaps;
 
 public class DigitalLevel : MonoBehaviour
 {
@@ -18,7 +20,7 @@ public class DigitalLevel : MonoBehaviour
     public float trailWidthMultiplier = 1f; // 相对于circle大小的倍数
     private TrailRenderer trailRenderer;
 
-    public AttitudeSensor attitudeSensor;
+    public GravitySensor gravitySensor;
 
     public static DigitalLevel Instance;
 
@@ -32,6 +34,11 @@ public class DigitalLevel : MonoBehaviour
     Vector2 targetPosition; // 目标位置
     Vector2 currentPosition; // 当前平滑后的位置
 
+    [SerializeField]
+    private bool isTesting = false;
+    [SerializeField]
+    private TextMeshProUGUI testText;
+
     void Awake()
     {
         Instance = this;
@@ -41,8 +48,8 @@ public class DigitalLevel : MonoBehaviour
     {
         if (Values.accAvail)
         {
-            InputSystem.EnableDevice(AttitudeSensor.current);
-            attitudeSensor = AttitudeSensor.current;
+            InputSystem.EnableDevice(GravitySensor.current);
+            gravitySensor = GravitySensor.current;
         }
     }
 
@@ -80,22 +87,29 @@ public class DigitalLevel : MonoBehaviour
         if (Values.accAvail)
         {
             // 获取加速度记数据
-            Vector3 acceleration = attitudeSensor.attitude.value.eulerAngles;
+            Vector3 acceleration = InputSystem.GetDevice<GravitySensor>().gravity.value;
 
             // 计算倾斜角度
-            tilt.x = NormalizeAngle(acceleration.x);
-            tilt.y = NormalizeAngle(acceleration.y);
-            tilt.z = NormalizeAngle(acceleration.z);
+            tilt.y = Mathf.Atan2(acceleration.y, -acceleration.z);
+            tilt.x = Mathf.Atan2(acceleration.x, -acceleration.z);
 
             tilt -= calibration;
 
             Vector2 circlePos;
-            circlePos.x = tilt.z * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
-            circlePos.y = tilt.x * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
+            circlePos.x = tilt.x * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
+            circlePos.y = tilt.y * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
 
             targetPosition = circlePos;
             currentPosition = Vector2.Lerp(currentPosition, targetPosition, smoothFactor);
             circle.transform.localPosition = currentPosition;
+
+            if (isTesting)
+            {
+                testText.text = "tilt: " + tilt + "\n" +
+                                "circlePos: " + circlePos + "\n" +
+                                "targetPosition: " + targetPosition + "\n" +
+                                "currentPosition: " + currentPosition;
+            }
         }
         else
         {
@@ -119,7 +133,7 @@ public class DigitalLevel : MonoBehaviour
         Debug.LogWarning(tilt);
     }
 
-    private float NormalizeAngle(float angle)
+    private float Normalize(float angle)
     {
         while (angle > 180)
             angle -= 360;

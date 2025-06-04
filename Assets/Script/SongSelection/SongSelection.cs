@@ -115,6 +115,11 @@ public class SongSelection : MonoBehaviour
         else
             ShowPreview(songList[0]);
     }
+
+    public void Test()
+    {
+        Util.Transition("TestDigitalLevel");
+    }
 }
 
 [System.Serializable]
