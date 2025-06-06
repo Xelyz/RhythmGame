@@ -9,10 +9,10 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [SerializeField] private Transform noteHolder;
-    [SerializeField] private GameUI gameUI;
-
-    private AudioManager audioController;
+    private GameUI gameUI;
+    private AudioManager audioManager;
     internal GameState gameState;
+    
     internal List<Note> notes = new();
     private int nextNoteIndex = 0;
     private int spawnTime;
@@ -21,11 +21,14 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         gameState = new GameState();
-        audioController = FindFirstObjectByType<AudioManager>();
+        audioManager = FindFirstObjectByType<AudioManager>();
+        gameUI = FindFirstObjectByType<GameUI>();
         
         spawnTime = Values.spawnTime;
+
         LoadChart();
-        StartCoroutine(audioController.InitGameMusic(PlayInfo.meta.id));
+        gameUI.SetBackground(PlayInfo.meta.id);
+        StartCoroutine(audioManager.InitGameMusic(PlayInfo.meta.id));
     }
 
     private void Start()
@@ -35,18 +38,21 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator WaitForComponentsReady()
     {
-        while (!audioController.isAudioReady)
+        while (!audioManager.isAudioReady)
         {
             yield return null;
         }
 
         Transfer.sceneReady = true;
+
         StartCoroutine(GameStart());
+        StartCoroutine(Util.DelayAction(() => DigitalLevel.Instance.FadeInCircle(), 1f));
     }
 
     private IEnumerator GameStart()
     {
         gameState.StartGame();
+
         float elapsedTime = 0f;
 
         while (elapsedTime * 1000f < Values.waitTime)
@@ -60,7 +66,7 @@ public class GameManager : MonoBehaviour
         }
 
         gameState.StartAudio();
-        audioController.Play();
+        audioManager.Play();
     }
 
     private void LoadChart()
@@ -89,7 +95,7 @@ public class GameManager : MonoBehaviour
         
         if (gameState.IsAudioPlaying)
         {
-            gameState.CurrentTime = (int)(audioController.CurrentTime * 1000) + Values.Preference.offsetms;
+            gameState.CurrentTime = (int)(audioManager.CurrentTime * 1000) + Values.Preference.offsetms;
             
             if (IsGameFinished())
             {
@@ -124,19 +130,19 @@ public class GameManager : MonoBehaviour
         gameState.EndGame();
 
         // 2秒音乐渐隐
-        float startVolume = audioController.musicSource.volume;
+        float startVolume = audioManager.musicSource.volume;
         float duration = 2f;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            audioController.musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+            audioManager.musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
             yield return null;
         }
 
         gameState.EndAudio();
-        audioController.Stop();
+        audioManager.Stop();
 
         ShowScore();
     }
@@ -155,7 +161,7 @@ public class GameManager : MonoBehaviour
         if (!gameState.IsPlaying) return;
 
         gameState.Pause();
-        audioController.Pause();
+        audioManager.Pause();
         DOTween.PauseAll();
         gameUI.ShowPauseUI();
     }
@@ -167,7 +173,7 @@ public class GameManager : MonoBehaviour
         StartCoroutine(gameUI.ShowCountdown(2f));
         StartCoroutine(Util.DelayAction(() => {
             gameState.Resume();
-            audioController.UnPause();
+            audioManager.UnPause();
             DOTween.PlayAll();
         }, 2f));
     }
@@ -195,9 +201,9 @@ public class GameManager : MonoBehaviour
     {
         // 确保清理所有动画和音频
         DOTween.KillAll();
-        if (audioController != null)
+        if (audioManager != null)
         {
-            audioController.Stop();
+            audioManager.Stop();
         }
     }
 }

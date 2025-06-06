@@ -8,6 +8,22 @@ public class GameUI : MonoBehaviour
     [SerializeField] private Button pauseButton;
     [SerializeField] private GameObject pausingPage;
     [SerializeField] private TextMeshProUGUI indicator;
+    [SerializeField] private Image background;
+
+    public void SetBackground(string songId)
+    {
+        Sprite jacket = Resources.Load<Sprite>($"songs/{songId}/jacket");
+
+        if (jacket != null)
+        {
+            background.sprite = jacket;
+        }
+        else
+        {
+            background.color = Color.black;
+            Debug.LogError($"Jacket not found for song {songId}");
+        }
+    }
 
     public void ShowPauseUI()
     {

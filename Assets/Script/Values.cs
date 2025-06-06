@@ -32,7 +32,7 @@ public static class Values
     public static float fullTiltAngle = 45f;
     
     // 时间窗口
-    public static int waitTime = 2000;
+    public static int waitTime = 3000;
     public static int spawnTime = 1500;
     public static int perfectWindow = 60;
     public static int goodWindow = 90;

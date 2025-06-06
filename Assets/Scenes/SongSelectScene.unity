@@ -1183,12 +1183,12 @@ GameObject:
   - component: {fileID: 624274615}
   - component: {fileID: 624274614}
   m_Layer: 5
-  m_Name: TestDigitalLevel
+  m_Name: Debug:TestDigitalLevel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &624274613
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2515,7 +2515,7 @@ GameObject:
   - component: {fileID: 1429145697}
   - component: {fileID: 1429145696}
   m_Layer: 0
-  m_Name: Debug:Setup
+  m_Name: Editor:Setup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

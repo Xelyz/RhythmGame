@@ -1,8 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.EnhancedTouch;
 using TMPro;
-using UnityEngine.Tilemaps;
+using DG.Tweening;
 
 public class DigitalLevel : MonoBehaviour
 {
@@ -20,19 +19,22 @@ public class DigitalLevel : MonoBehaviour
     public float trailWidthMultiplier = 1f; // 相对于circle大小的倍数
     private TrailRenderer trailRenderer;
 
+    public AttitudeSensor attitudeSensor;
     public GravitySensor gravitySensor;
 
     public static DigitalLevel Instance;
 
     /// <remarks>
-    /// X: pitch (俯仰角)
-    /// Y: yaw (偏航角) 
-    /// Z: roll (横滚角)
+    /// X: roll (横滚角)
+    /// Y: pitch (俯仰角)
+    /// Z: yaw (偏航角)
     /// </remarks>
     Vector3 tilt;
     Vector3 calibration = Vector3.zero;
     Vector2 targetPosition; // 目标位置
     Vector2 currentPosition; // 当前平滑后的位置
+
+    private bool isCircleUnlocked = false;
 
     [SerializeField]
     private bool isTesting = false;
@@ -48,6 +50,8 @@ public class DigitalLevel : MonoBehaviour
     {
         if (Values.accAvail)
         {
+            InputSystem.EnableDevice(AttitudeSensor.current);
+            attitudeSensor = AttitudeSensor.current;
             InputSystem.EnableDevice(GravitySensor.current);
             gravitySensor = GravitySensor.current;
         }
@@ -66,6 +70,8 @@ public class DigitalLevel : MonoBehaviour
         Transform circleTransform = circle.transform;
         // 初始化当前位置
         currentPosition = circleTransform.localPosition;
+
+        circle.GetComponent<SpriteRenderer>().DOFade(0f, 0f);
 
         // 设置拖尾效果
         trailRenderer = circle.AddComponent<TrailRenderer>();
@@ -87,17 +93,29 @@ public class DigitalLevel : MonoBehaviour
         if (Values.accAvail)
         {
             // 获取加速度记数据
-            Vector3 acceleration = InputSystem.GetDevice<GravitySensor>().gravity.value;
+            Quaternion attitude = attitudeSensor.attitude.value;
+            //Vector3 localGravity = gravitySensor.gravity.value;
 
-            // 计算倾斜角度
-            tilt.y = Mathf.Atan2(acceleration.y, -acceleration.z);
-            tilt.x = Mathf.Atan2(acceleration.x, -acceleration.z);
+            Vector3 localGravity = Quaternion.Inverse(attitude) * new Vector3(0, 0, -1f);
 
+            // 3. 使用 Atan2 计算 Pitch 和 Roll
+            // Atan2(y, x) 返回 y/x 的反正切值，但能正确处理全象限的角度
+            tilt.x = Mathf.Atan2(localGravity.x, -localGravity.z) * Mathf.Rad2Deg;
+            tilt.y = Mathf.Atan2(localGravity.y, -localGravity.z) * Mathf.Rad2Deg;
+            tilt.z = attitude.eulerAngles.z;
+            
             tilt -= calibration;
 
+            tilt = Normalize(tilt);
+
+            if (!isCircleUnlocked)
+            {
+                return;
+            }
+
             Vector2 circlePos;
-            circlePos.x = tilt.x * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
-            circlePos.y = tilt.y * Mathf.Rad2Deg / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
+            circlePos.x = tilt.x / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
+            circlePos.y = tilt.y / Values.fullTiltAngle * Values.Preference.sensitivity * Values.canvasHalfWidth;
 
             targetPosition = circlePos;
             currentPosition = Vector2.Lerp(currentPosition, targetPosition, smoothFactor);
@@ -106,9 +124,9 @@ public class DigitalLevel : MonoBehaviour
             if (isTesting)
             {
                 testText.text = "tilt: " + tilt + "\n" +
+                                "localGravity: " + localGravity + "\n" +
                                 "circlePos: " + circlePos + "\n" +
-                                "targetPosition: " + targetPosition + "\n" +
-                                "currentPosition: " + currentPosition;
+                                "targetPosition: " + targetPosition + "\n";
             }
         }
         else
@@ -126,19 +144,41 @@ public class DigitalLevel : MonoBehaviour
         return currentPosition; // 返回平滑后的位置
     }
 
-    public void Calibrate(Finger _ = null)
+    public void Calibrate()
     {
+        if (!Values.accAvail)
+        {
+            return;
+        }
+
         calibration += tilt;
         Debug.LogWarning("calibrated this much:");
         Debug.LogWarning(tilt);
     }
 
-    private float Normalize(float angle)
+    private Vector3 Normalize(Vector3 angle)
     {
-        while (angle > 180)
-            angle -= 360;
-        while (angle <= -180)
-            angle += 360;
+        while (angle.x > 180)
+            angle.x -= 360;
+        while (angle.x <= -180)
+            angle.x += 360;
+        while (angle.y > 180)
+            angle.y -= 360;
+        while (angle.y <= -180)
+            angle.y += 360;
+        while (angle.z > 180)
+            angle.z -= 360;
+        while (angle.z <= -180)
+            angle.z += 360;
         return angle;
+    }
+
+    public void FadeInCircle()
+    {
+        circle.GetComponent<SpriteRenderer>().DOFade(1f, 1f).From(0f).SetEase(Ease.OutCubic).OnComplete(() =>
+        {
+            isCircleUnlocked = true;
+            Calibrate();
+        });
     }
 }
