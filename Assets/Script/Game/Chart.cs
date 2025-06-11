@@ -88,7 +88,7 @@ public class Tap : Note
         head.localScale = new Vector3(radius, radius, 1f);
 
         Vector3 newPosition = circle.transform.position;
-        newPosition.z = Values.planeDistance + animationDuration * Values.Preference.noteSpeed;
+        newPosition.z = Values.planeDistance + animationDuration * Values.Preference.NoteSpeed;
         circle.transform.position = newPosition;
 
         Color color = circle.color;
