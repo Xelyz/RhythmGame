@@ -16,6 +16,7 @@ public class ShowScore : MonoBehaviour
     // public TextMeshProUGUI goodCountText;
     // public TextMeshProUGUI badCountText;
     // public TextMeshProUGUI missCountText;
+    public Image jacket;
 
     void Start()
     {
@@ -24,6 +25,13 @@ public class ShowScore : MonoBehaviour
         // badCountText.text = PlayStats.badCount.ToString();
         // missCountText.text = PlayStats.missCount.ToString();
         titleText.text = PlayInfo.meta.title;
+        
+        // jacket sprite defaults to placeholder
+        Sprite sprite = Resources.Load<Sprite>($"songs/{PlayInfo.meta.id}/jacket");
+        if (sprite != null)
+        {
+            jacket.sprite = sprite;
+        }
 
         accText.text = GameStats.acc.ToString("F2") + "%";
         rankText.text = GetRating(GameStats.acc);
