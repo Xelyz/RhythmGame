@@ -228,7 +228,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -85.86844}
+  m_AnchoredPosition: {x: 121, y: -120}
   m_SizeDelta: {x: 500, y: 119.88312}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &167246225
@@ -278,14 +278,14 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 90
-  m_fontSizeBase: 90
+  m_fontSize: 60
+  m_fontSizeBase: 60
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -379,6 +379,7 @@ MonoBehaviour:
   accText: {fileID: 167246225}
   rankText: {fileID: 1420970133}
   backButton: {fileID: 1048589412}
+  jacket: {fileID: 0}
 --- !u!114 &363752649
 MonoBehaviour:
   m_ObjectHideFlags: 0

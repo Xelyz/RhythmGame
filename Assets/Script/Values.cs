@@ -22,7 +22,7 @@ public static class Values
 
     // 判定相关
     public static float tapRadius = 35f;
-    public static float dragRadius = 25f;
+    public static float dragRadius = 20f;
     public static float judgeLeniency = 20f;
     public static float TapJudgeRadius => tapRadius + judgeLeniency;
     public static float HoldingRadius => tapRadius * 2;
