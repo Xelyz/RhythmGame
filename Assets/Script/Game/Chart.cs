@@ -8,6 +8,7 @@ public class Note
     public Vector2 position;
     public NoteType type;
     public int nthNote;
+    public Vector2Int cellIndex;
 
     public virtual void Initialize(Transform noteHolder) { }
 
@@ -32,7 +33,6 @@ public class Tap : Note
     public Tap()
     {
         type = NoteType.Tap;
-        radius = Values.tapRadius;
     }
 
     protected virtual void GetObjects()
@@ -85,14 +85,17 @@ public class Tap : Note
         gameObject.transform.localPosition = Vector3.zero;
 
         head.localPosition = new(position.x, position.y);
-        head.localScale = new Vector3(radius, radius, 1f);
+
+        // 按格子尺寸填充
+        Vector2 cellSize = Values.CellSize();
+        head.localScale = new Vector3(cellSize.x, cellSize.y, 1f);
 
         Vector3 newPosition = circle.transform.position;
         newPosition.z = Values.planeDistance + animationDuration * Values.Preference.NoteSpeed;
         circle.transform.position = newPosition;
 
         Color color = circle.color;
-        color.a = 1f;
+        color.a = 0.6f;
         circle.color = color;
 
         circle.transform.localScale = new(1, 1, 1);
@@ -100,7 +103,7 @@ public class Tap : Note
 
         scroll.isActive = true;
 
-        if (outerCircle != null)
+        if (outerCircle != null && outerCircle.activeSelf)
         {
             outerCircle.SetActive(true);
             SpriteRenderer outerSR = outerCircle.GetComponentInChildren<SpriteRenderer>();
@@ -110,6 +113,12 @@ public class Tap : Note
         }
 
         isFading = false;
+
+        if (Values.gridDebugLog)
+        {
+            Bounds b = circle.bounds;
+            Debug.Log($"Note init cell=({cellIndex.x},{cellIndex.y}) center={position} cellSize={cellSize} spriteWorldSize=({b.size.x},{b.size.y})");
+        }
     }
 }
 
@@ -118,7 +127,6 @@ public class Drag : Tap
     public Drag()
     {
         type = NoteType.Drag;
-        radius = Values.dragRadius;
     }
 }
 
@@ -127,7 +135,6 @@ public class Block : Tap
     public Block()
     {
         type = NoteType.Block;
-        radius = Values.tapRadius;
     }
 }
 

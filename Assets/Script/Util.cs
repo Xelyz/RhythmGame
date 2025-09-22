@@ -103,7 +103,10 @@ public static class Util
                         note = new Tap();
                     }
 
-                    note.position = PivotMiddle(new Vector2(noteData.X, noteData.Y));
+                    // 将谱面顶左坐标量化到网格
+                    Vector2Int cell = Values.TopLeftToCellIndex(new Vector2(noteData.X, noteData.Y));
+                    note.cellIndex = cell;
+                    note.position = Values.CellCenterLocal(cell.x, cell.y);
                     note.timeStamp = noteData.TimeStamp;
                     note.nthNote = n++;
 

@@ -379,7 +379,7 @@ MonoBehaviour:
   accText: {fileID: 167246225}
   rankText: {fileID: 1420970133}
   backButton: {fileID: 1048589412}
-  jacket: {fileID: 0}
+  jacket: {fileID: 91945177}
 --- !u!114 &363752649
 MonoBehaviour:
   m_ObjectHideFlags: 0

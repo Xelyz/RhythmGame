@@ -16,8 +16,7 @@ public class NoteJudge : MonoBehaviour
     
     // Cache variables
     private readonly List<int> removeIndices = new();
-    private readonly float judgeRadiusSquared = Values.TapJudgeRadius * Values.TapJudgeRadius;
-    private readonly float blockRadiusSquared = Values.tapRadius * Values.tapRadius;
+    // 基于网格判定，不再使用半径
     
     public static NoteJudge Instance { get; private set; }
     
@@ -113,11 +112,12 @@ public class NoteJudge : MonoBehaviour
     private void ProcessActiveNotes(int time, Vector2 cursorPosition)
     {
         removeIndices.Clear();
+        Vector2Int cursorCell = Values.LocalToCellIndex(cursorPosition);
 
         for (int i = 0; i < judgmentQueue.Count; i++)
         {
             Note note = notes[judgmentQueue[i]];
-            float distanceSquared = (note.position - cursorPosition).sqrMagnitude;
+            bool sameCell = note.cellIndex.x == cursorCell.x && note.cellIndex.y == cursorCell.y;
             
             // 统一处理FadeOut
             if (note.timeStamp - time <= 0)
@@ -129,11 +129,11 @@ public class NoteJudge : MonoBehaviour
             switch (note.type)
             {
                 case NoteType.Block:
-                    shouldRemove = ProcessBlockNote(note, time, distanceSquared);
+                    shouldRemove = ProcessBlockNote(note, time, sameCell);
                     break;
                     
                 case NoteType.Drag:
-                    shouldRemove = ProcessDragNote(note, time, distanceSquared);
+                    shouldRemove = ProcessDragNote(note, time, sameCell);
                     break;
             }
             
@@ -156,6 +156,7 @@ public class NoteJudge : MonoBehaviour
         int remainingTaps = tapCount;
         
         removeIndices.Clear();
+        Vector2Int cursorCell = Values.LocalToCellIndex(cursorPosition);
 
         for (int i = 0; i < judgmentQueue.Count && remainingTaps > 0; i++)
         {
@@ -163,9 +164,9 @@ public class NoteJudge : MonoBehaviour
             
             if (note.type != NoteType.Tap) continue;
             
-            float distanceSquared = (note.position - cursorPosition).sqrMagnitude;
+            bool sameCell = note.cellIndex.x == cursorCell.x && note.cellIndex.y == cursorCell.y;
             
-            if (ProcessTapNote(note, time, distanceSquared))
+            if (ProcessTapNote(note, time, sameCell))
             {
                 remainingTaps--;
                 removeIndices.Add(i);
@@ -179,9 +180,9 @@ public class NoteJudge : MonoBehaviour
         }
     }
 
-    private bool ProcessTapNote(Note note, int time, float distanceSquared)
+    private bool ProcessTapNote(Note note, int time, bool sameCell)
     {
-        if (distanceSquared >= judgeRadiusSquared) return false;
+        if (!sameCell) return false;
         
         Judgment judgment = judgeCenter.Judge(note.timeStamp - time);
         JudgeFeedback(judgment, note);
@@ -189,11 +190,11 @@ public class NoteJudge : MonoBehaviour
         return true;
     }
 
-    private bool ProcessBlockNote(Note note, int time, float distanceSquared)
+    private bool ProcessBlockNote(Note note, int time, bool sameCell)
     {
         if (note.timeStamp - time >= 0) return false;
         
-        if (distanceSquared < blockRadiusSquared)
+        if (sameCell)
         {
             JudgeFeedback(Judgment.Miss, null);
             shakeEffects.ForEach(x => x.TriggerShake());
@@ -206,9 +207,9 @@ public class NoteJudge : MonoBehaviour
         return true;
     }
 
-    private bool ProcessDragNote(Note note, int time, float distanceSquared)
+    private bool ProcessDragNote(Note note, int time, bool sameCell)
     {
-        if (distanceSquared >= judgeRadiusSquared) return false;
+        if (!sameCell) return false;
         
         int timeDifference = note.timeStamp - time;
         if (judgeCenter.Judge(timeDifference) == Judgment.Bad) return false;

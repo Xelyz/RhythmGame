@@ -16,7 +16,7 @@ public class NoteScroll : MonoBehaviour
 
     void Update()
     {
-        if (GameManager.Instance.gameState.IsPlaying && isActive)
+        if (GameManager.Instance.gameState.IsPlaying && isActive && transform.position.z > Values.planeDistance)
         {
             // 使用补偿后的时间来计算位置
             // float compensatedSpeed = Values.Preference.NoteSpeed * (1 + timeOffset * 0.01f);
