@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using System.Reflection;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -9,6 +10,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [SerializeField] private Transform noteHolder;
+    public Transform NoteHolder => noteHolder;
     private GameUI gameUI;
     private AudioManager audioManager;
     internal GameState gameState;
@@ -16,6 +18,7 @@ public class GameManager : MonoBehaviour
     internal List<Note> notes = new();
     private int nextNoteIndex = 0;
     private int spawnTime;
+    private GameObject barlineManagerGO;
 
     private void Awake()
     {
@@ -80,6 +83,21 @@ public class GameManager : MonoBehaviour
             notes = chartData.notes;
 
             Debug.Log($"Loaded {notes.Count} notes.");
+            
+            // 初始化小节线管理器
+            if (chartData.beatIntervalMs > 0f)
+            {
+                GameObject barGo = new("BarlineManager");
+                barlineManagerGO = barGo;
+                var asm = typeof(Note).Assembly;
+                var barType = asm.GetType("BarlineManager");
+                if (barType != null)
+                {
+                    var comp = barGo.AddComponent(barType);
+                    var init = barType.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance);
+                    init?.Invoke(comp, new object[] { NoteHolder, chartData.beatIntervalMs });
+                }
+            }
         }
         else
         {

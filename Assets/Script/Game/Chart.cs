@@ -148,4 +148,5 @@ public enum NoteType
 public class Chart
 {
     public List<Note> notes;
+    public float beatIntervalMs;
 }

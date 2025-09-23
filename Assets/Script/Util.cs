@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Newtonsoft.Json;
 using System.IO;
+using System.Globalization;
 
 public static class Util
 {
@@ -62,14 +63,21 @@ public static class Util
     {
         Chart chart = new()
         {
-            notes = new()
+            notes = new(),
+            beatIntervalMs = 0f
         };
         string[] lines = chartData.Split('\n');
         string reading = "";
         int n = 1;
+        bool timingPointParsed = false;
         foreach (string line in lines)
         {
             if (line == "") continue;
+            if (line.StartsWith("[TimingPoints]"))
+            {
+                reading = "TimingPoints";
+                continue;
+            }
             if (line.StartsWith("[HitObjects]"))
             {
                 reading = "HitObjects";
@@ -78,6 +86,24 @@ public static class Util
             if (line.StartsWith("["))
             {
                 reading = "";
+                continue;
+            }
+            if (reading == "TimingPoints" && !timingPointParsed)
+            {
+                // 只读取第一行，逗号分隔的第二个元素为每拍毫秒
+                try
+                {
+                    string[] data = line.Split(',');
+                    if (data.Length >= 2)
+                    {
+                        chart.beatIntervalMs = float.Parse(data[1], CultureInfo.InvariantCulture);
+                        timingPointParsed = true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to parse TimingPoints line: '{line}'. Error: {e.Message}");
+                }
                 continue;
             }
             if (reading == "HitObjects")
