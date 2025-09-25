@@ -19,13 +19,16 @@ public class TouchInput : MonoBehaviour
         InitializeInputData();
         UpdateCursorPosition();
         
-        if (Values.accAvail)
+        if (!PlayInfo.isAutoplay)
         {
-            ProcessTouch();
-        }
-        else
-        {
-            ProcessMouse();
+            if (Values.accAvail)
+            {
+                ProcessTouch();
+            }
+            else
+            {
+                ProcessMouse();
+            }
         }
 
         // 使用事件系统传递输入信息

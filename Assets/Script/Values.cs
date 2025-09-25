@@ -1,5 +1,6 @@
 using System.IO;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public static class Values
 {
@@ -42,7 +43,7 @@ public static class Values
     public static int gridRows = 3;
 
     // 调试
-    public static bool gridDebugLog = false;
+    public static bool gridDebugLog = true;
 
     public static Vector2 CellSize()
     {

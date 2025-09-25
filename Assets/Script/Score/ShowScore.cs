@@ -38,8 +38,11 @@ public class ShowScore : MonoBehaviour
 
         backButton.onClick.AddListener(BackToTitle);
 
-        UpdateResult();
-        Util.SaveData();
+        if (!PlayInfo.isAutoplay)
+        {
+            UpdateResult();
+            Util.SaveData();
+        }
     }
 
     private string GetRating(float acc)

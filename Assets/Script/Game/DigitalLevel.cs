@@ -11,6 +11,9 @@ public class DigitalLevel : MonoBehaviour
     [Range(0.1f, 1f)]
     public float smoothFactor = 0.8f; // 平滑因子，值越小越平滑
 
+	[Header("Autoplay Movement")]
+	public bool showAutoplayDebugInfo = false; // 是否显示autoplay调试信息
+
     [Header("Trail Settings")]
     public Color trailStartColor = Color.white;
     public Color trailEndColor = new(1, 1, 1, 0);
@@ -35,6 +38,12 @@ public class DigitalLevel : MonoBehaviour
     Vector2 currentPosition; // 当前平滑后的位置
 
     private bool isCircleUnlocked = false;
+    private bool isAutoplayControlled = false;
+    private Vector2 autoplayTargetPosition;
+    private float autoplayTargetTimeMs; // 目标到达时间（游戏时间ms）
+    private float autoplayStartTimeMs; // 开始移动的时间（游戏时间ms）
+    private Vector2 autoplayStartPosition; // 开始移动时的位置
+    private float calculatedSpeed; // 根据时间和距离计算的移动速度
 
     [SerializeField]
     private bool isTesting = false;
@@ -90,6 +99,48 @@ public class DigitalLevel : MonoBehaviour
 
     void FixedUpdate()
     {
+		// Autoplay: 基于游戏时间的精确移动
+		if (PlayInfo.isAutoplay && isAutoplayControlled)
+        {
+            float currentTimeMs = GameManager.Instance.gameState.CurrentTime;
+            float totalMoveTimeMs = autoplayTargetTimeMs - autoplayStartTimeMs;
+            float elapsedTimeMs = currentTimeMs - autoplayStartTimeMs;
+            
+            if (totalMoveTimeMs > 0 && elapsedTimeMs >= 0)
+            {
+                float progress = Mathf.Clamp01(elapsedTimeMs / totalMoveTimeMs);
+                
+                // 使用平滑插值确保在目标时间点准确到达
+                currentPosition = Vector2.Lerp(autoplayStartPosition, autoplayTargetPosition, progress);
+                
+                // 如果已经到达或超过目标时间，确保精确定位
+                if (progress >= 1.0f || currentTimeMs >= autoplayTargetTimeMs)
+                {
+                    currentPosition = autoplayTargetPosition;
+                }
+            }
+            else
+            {
+                // 如果时间配置有问题，立即移动到目标位置
+                currentPosition = autoplayTargetPosition;
+            }
+            
+            circle.transform.localPosition = currentPosition;
+
+            if (isTesting && showAutoplayDebugInfo)
+            {
+                float distance = Vector2.Distance(autoplayStartPosition, autoplayTargetPosition);
+                float progress = totalMoveTimeMs > 0 ? Mathf.Clamp01(elapsedTimeMs / totalMoveTimeMs) : 1f;
+                testText.text = "[AUTO] target=" + autoplayTargetPosition + "\n" +
+                                "current=" + currentPosition + "\n" +
+                                "progress=" + (progress * 100f).ToString("F1") + "%" + "\n" +
+                                "distance=" + distance.ToString("F1") + "\n" +
+                                "timeLeftMs=" + Mathf.Max(0, autoplayTargetTimeMs - currentTimeMs).ToString("F1") + "ms" + "\n" +
+                                "calcSpeed=" + calculatedSpeed.ToString("F1");
+            }
+            return;
+        }
+
         if (Values.accAvail)
         {
             // 获取加速度记数据
@@ -142,6 +193,56 @@ public class DigitalLevel : MonoBehaviour
     public Vector2 GetPosition()
     {
         return currentPosition; // 返回平滑后的位置
+    }
+
+    public void EnableAutoplayControl(bool enabled)
+    {
+        isAutoplayControlled = enabled;
+        if (enabled)
+        {
+            // 启用时立即将外部目标设置为当前位置，避免跳变
+            autoplayTargetPosition = currentPosition;
+            autoplayTargetTimeMs = GameManager.Instance.gameState.CurrentTime;
+            autoplayStartTimeMs = GameManager.Instance.gameState.CurrentTime;
+            autoplayStartPosition = currentPosition;
+            if (Values.gridDebugLog)
+            {
+                Debug.Log("[AUTO] Autoplay control enabled for cursor.");
+            }
+        }
+    }
+
+    public void SetAutoplayTarget(Vector2 target, float targetTimeMs)
+    {
+        autoplayTargetPosition = target;
+        autoplayTargetTimeMs = targetTimeMs;
+        autoplayStartTimeMs = GameManager.Instance.gameState.CurrentTime;
+        autoplayStartPosition = currentPosition;
+        
+        float distance = Vector2.Distance(autoplayStartPosition, autoplayTargetPosition);
+        float timeToMoveMs = autoplayTargetTimeMs - autoplayStartTimeMs;
+        calculatedSpeed = timeToMoveMs > 0 ? distance / (timeToMoveMs / 1000f) : float.MaxValue; // 转换为units/second
+        
+        if (Values.gridDebugLog)
+        {
+            Debug.Log($"[AUTO] Set cursor target to {target} at gameTime {targetTimeMs:F1}ms, " +
+                     $"distance={distance:F1}, moveTimeMs={timeToMoveMs:F1}ms, speed={calculatedSpeed:F1}");
+        }
+    }
+
+    // 保持向后兼容的重载方法
+    public void SetAutoplayTarget(Vector2 target)
+    {
+        // 如果没有指定时间，立即移动
+        SetAutoplayTarget(target, GameManager.Instance.gameState.CurrentTime + 100f);
+    }
+
+    public bool HasAutoplayTarget()
+    {
+        if (!isAutoplayControlled) return false;
+        // 基于游戏时间判断是否还在移动过程中
+        float currentTimeMs = GameManager.Instance.gameState.CurrentTime;
+        return currentTimeMs < autoplayTargetTimeMs;
     }
 
     public void Calibrate()

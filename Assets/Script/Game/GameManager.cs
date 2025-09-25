@@ -54,6 +54,11 @@ public class GameManager : MonoBehaviour
     private IEnumerator GameStart()
     {
         gameState.StartGame();
+        // Autoplay: 启用外部控制（若开启）
+        if (PlayInfo.isAutoplay)
+        {
+            DigitalLevel.Instance.EnableAutoplayControl(true);
+        }
 
         float elapsedTime = 0f;
 
