@@ -8,6 +8,7 @@ public class GameState
     public void StartGame() 
     {
         IsPlaying = true;
+        IsPaused = false;
         CurrentTime = -Values.waitTime;
     }
 

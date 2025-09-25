@@ -43,7 +43,7 @@ public static class Values
     public static int gridRows = 3;
 
     // 调试
-    public static bool gridDebugLog = true;
+    public static bool gridDebugLog = false;
 
     public static Vector2 CellSize()
     {
