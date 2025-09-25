@@ -17,8 +17,7 @@ public class GameManager : MonoBehaviour
     
     internal List<Note> notes = new();
     private int nextNoteIndex = 0;
-    private int spawnTime;
-    private GameObject barlineManagerGO;
+    private float spawnTime;
 
     private void Awake()
     {
@@ -63,7 +62,7 @@ public class GameManager : MonoBehaviour
             if (!gameState.IsPaused)
             {
                 elapsedTime += Time.deltaTime;
-                gameState.CurrentTime = (int)(elapsedTime * 1000) - Values.waitTime + Values.Preference.offsetms;
+                gameState.CurrentTime = (elapsedTime * 1000f) - Values.waitTime + Values.Preference.offsetms;
             }
             yield return null;
         }
@@ -81,22 +80,18 @@ public class GameManager : MonoBehaviour
             string chart = rawChart.text;
             Chart chartData = Util.GetChart(chart);
             notes = chartData.notes;
-
             Debug.Log($"Loaded {notes.Count} notes.");
-            
-            // 初始化小节线管理器
-            if (chartData.beatIntervalMs > 0f)
+
+            // 依据事件预计算小节线时间戳
+            List<float> barlineTimes = Util.BuildBarlineTimestamps(chartData.events, notes);
+            Debug.Log($"Built {barlineTimes.Count} barlines from events.");
+            Debug.Log($"Barline times: {string.Join(", ", barlineTimes)}");
+
+            if (barlineTimes.Count > 0)
             {
                 GameObject barGo = new("BarlineManager");
-                barlineManagerGO = barGo;
-                var asm = typeof(Note).Assembly;
-                var barType = asm.GetType("BarlineManager");
-                if (barType != null)
-                {
-                    var comp = barGo.AddComponent(barType);
-                    var init = barType.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance);
-                    init?.Invoke(comp, new object[] { NoteHolder, chartData.beatIntervalMs });
-                }
+                BarlineManager barlineManager = barGo.AddComponent<BarlineManager>();
+                barlineManager.Init(NoteHolder, barlineTimes);
             }
         }
         else
@@ -113,7 +108,7 @@ public class GameManager : MonoBehaviour
         
         if (gameState.IsAudioPlaying)
         {
-            gameState.CurrentTime = (int)(audioManager.CurrentTime * 1000) + Values.Preference.offsetms;
+            gameState.CurrentTime = (audioManager.CurrentTime * 1000f) + Values.Preference.offsetms;
             
             if (IsGameFinished())
             {

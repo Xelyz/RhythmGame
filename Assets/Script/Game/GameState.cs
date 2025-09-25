@@ -3,7 +3,7 @@ public class GameState
     public bool IsPlaying { get; private set; }
     public bool IsAudioPlaying { get; private set; }
     public bool IsPaused { get; private set; }
-    public int CurrentTime { get; set; }
+    public float CurrentTime { get; set; }
 
     public void StartGame() 
     {

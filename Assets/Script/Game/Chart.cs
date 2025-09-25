@@ -4,7 +4,7 @@ using DG.Tweening;
 
 public class Note
 {
-    public int timeStamp;
+    public float timeStamp;
     public Vector2 position;
     public NoteType type;
     public int nthNote;
@@ -94,6 +94,9 @@ public class Tap : Note
         newPosition.z = Values.planeDistance + animationDuration * Values.Preference.NoteSpeed;
         circle.transform.position = newPosition;
 
+		// debug log for z-index alignment check
+		Debug.Log($"SPAWN [NOTE] t={timeStamp:F3}ms current={GameManager.Instance.gameState.CurrentTime:F3}ms anim={animationDuration:F3}s z={newPosition.z:F3} plane={Values.planeDistance} speed={Values.Preference.NoteSpeed} spawnTime={Values.spawnTime}");
+
         Color color = circle.color;
         color.a = 0.6f;
         circle.color = color;
@@ -148,5 +151,5 @@ public enum NoteType
 public class Chart
 {
     public List<Note> notes;
-    public float beatIntervalMs;
+    public List<ChartEvent> events;
 }

@@ -63,11 +63,11 @@ public class NoteJudge : MonoBehaviour
     
     private void UpdateJudgmentQueue()
     {
-        int time = GameManager.Instance.gameState.CurrentTime;
+        float time = GameManager.Instance.gameState.CurrentTime;
 
         while (pointer < notes.Count)
         {
-            int timeDifference = notes[pointer].timeStamp - time;
+            float timeDifference = notes[pointer].timeStamp - time;
 
             if (timeDifference > Values.badWindow)
             {
@@ -83,7 +83,7 @@ public class NoteJudge : MonoBehaviour
     {
         if (judgmentQueue.Count == 0) return;
         
-        int time = GameManager.Instance.gameState.CurrentTime;
+        float time = GameManager.Instance.gameState.CurrentTime;
         Vector2 cursorPosition = DigitalLevel.Instance.GetPosition();
         
         ProcessMissedNotes(time);
@@ -93,7 +93,7 @@ public class NoteJudge : MonoBehaviour
         ProcessActiveNotes(time, cursorPosition);
     }
 
-    private void ProcessMissedNotes(int time)
+    private void ProcessMissedNotes(float time)
     {
         int missCount = 0;
         foreach (int index in judgmentQueue)
@@ -109,7 +109,7 @@ public class NoteJudge : MonoBehaviour
         }
     }
 
-    private void ProcessActiveNotes(int time, Vector2 cursorPosition)
+    private void ProcessActiveNotes(float time, Vector2 cursorPosition)
     {
         removeIndices.Clear();
         Vector2Int cursorCell = Values.LocalToCellIndex(cursorPosition);
@@ -120,7 +120,7 @@ public class NoteJudge : MonoBehaviour
             bool sameCell = note.cellIndex.x == cursorCell.x && note.cellIndex.y == cursorCell.y;
             
             // 统一处理FadeOut
-            if (note.timeStamp - time <= 0)
+            if (note.timeStamp - time <= 0f)
             {
                 note.FadeOut();
             }
@@ -152,7 +152,7 @@ public class NoteJudge : MonoBehaviour
     
     private void ProcessTapInput(int tapCount, Vector2 cursorPosition)
     {
-        int time = GameManager.Instance.gameState.CurrentTime;
+        float time = GameManager.Instance.gameState.CurrentTime;
         int remainingTaps = tapCount;
         
         removeIndices.Clear();
@@ -180,7 +180,7 @@ public class NoteJudge : MonoBehaviour
         }
     }
 
-    private bool ProcessTapNote(Note note, int time, bool sameCell)
+    private bool ProcessTapNote(Note note, float time, bool sameCell)
     {
         if (!sameCell) return false;
         
@@ -190,9 +190,9 @@ public class NoteJudge : MonoBehaviour
         return true;
     }
 
-    private bool ProcessBlockNote(Note note, int time, bool sameCell)
+    private bool ProcessBlockNote(Note note, float time, bool sameCell)
     {
-        if (note.timeStamp - time >= 0) return false;
+        if (note.timeStamp - time >= 0f) return false;
         
         if (sameCell)
         {
@@ -207,11 +207,11 @@ public class NoteJudge : MonoBehaviour
         return true;
     }
 
-    private bool ProcessDragNote(Note note, int time, bool sameCell)
+    private bool ProcessDragNote(Note note, float time, bool sameCell)
     {
         if (!sameCell) return false;
         
-        int timeDifference = note.timeStamp - time;
+        float timeDifference = note.timeStamp - time;
         if (judgeCenter.Judge(timeDifference) == Judgment.Bad) return false;
 
         if (timeDifference > 0)

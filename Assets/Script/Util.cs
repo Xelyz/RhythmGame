@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Newtonsoft.Json;
@@ -49,12 +50,13 @@ public static class Util
 
     struct NoteData
     {
-        public int X, Y, TimeStamp, Type;
+        public int X, Y, Type;
+        public float TimeStamp;
         public NoteData(string[] data)
         {
             X = int.Parse(data[0]);
             Y = int.Parse(data[1]);
-            TimeStamp = int.Parse(data[2]);
+            TimeStamp = float.Parse(data[2], CultureInfo.InvariantCulture);
             Type = int.Parse(data[4]);
         }
     }
@@ -64,12 +66,12 @@ public static class Util
         Chart chart = new()
         {
             notes = new(),
-            beatIntervalMs = 0f
+            events = new()
         };
         string[] lines = chartData.Split('\n');
         string reading = "";
         int n = 1;
-        bool timingPointParsed = false;
+        // parse all timing points as events (bpm only)
         foreach (string line in lines)
         {
             if (line == "") continue;
@@ -88,16 +90,27 @@ public static class Util
                 reading = "";
                 continue;
             }
-            if (reading == "TimingPoints" && !timingPointParsed)
+            if (reading == "TimingPoints")
             {
-                // 只读取第一行，逗号分隔的第二个元素为每拍毫秒
+                // 读取每一行TimingPoints为事件。仅保留uninherited==1的BPM事件
                 try
                 {
                     string[] data = line.Split(',');
-                    if (data.Length >= 2)
+                    if (data.Length >= 7)
                     {
-                        chart.beatIntervalMs = float.Parse(data[1], CultureInfo.InvariantCulture);
-                        timingPointParsed = true;
+                        // data[6] == "1" 表示非继承节拍(BPM)
+                        if (data[6].Trim() == "1")
+                        {
+                            float time = float.Parse(data[0], CultureInfo.InvariantCulture);
+                            string beatLen = float.Parse(data[1], CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+                            ChartEvent ev = new()
+                            {
+                                timeStamp = time,
+                                type = "bpm",
+                                data = beatLen
+                            };
+                            chart.events.Add(ev);
+                        }
                     }
                 }
                 catch (Exception e)
@@ -146,6 +159,69 @@ public static class Util
             }
         }
         return chart;
+    }
+
+    public static List<float> BuildBarlineTimestamps(List<ChartEvent> events, List<Note> notes)
+    {
+        List<float> result = new();
+        if (events == null || events.Count == 0) return result;
+
+        // 仅使用bpm事件，按时间排序
+        List<(float t, float beatMs)> bpmEvents = new();
+        foreach (var ev in events)
+        {
+            if (ev != null && ev.type == "bpm")
+            {
+                if (float.TryParse(ev.data, NumberStyles.Float, CultureInfo.InvariantCulture, out float beatMs))
+                {
+                    bpmEvents.Add((ev.timeStamp, beatMs));
+                }
+            }
+        }
+        if (bpmEvents.Count == 0) return result;
+        bpmEvents.Sort((a, b) => a.t.CompareTo(b.t));
+
+        // 计算结束时间（使用谱面中最后一个音符时间）
+        float endTime = 0f;
+        if (notes != null && notes.Count > 0)
+        {
+            for (int i = 0; i < notes.Count; i++)
+            {
+                if (notes[i] != null && notes[i].timeStamp > endTime)
+                {
+                    endTime = notes[i].timeStamp;
+                }
+            }
+        }
+
+        for (int i = 0; i < bpmEvents.Count; i++)
+        {
+            float segmentStart = bpmEvents[i].t;
+            float beatMs = Mathf.Max(1f, bpmEvents[i].beatMs);
+            float measureMs = beatMs * 4f;
+            float segmentEnd = (i < bpmEvents.Count - 1) ? bpmEvents[i + 1].t : endTime;
+
+            if (segmentEnd < segmentStart)
+            {
+                segmentEnd = segmentStart; // 防御
+            }
+
+            // 在收到第一个/新的BPM事件时立即生成一个barline
+            if (result.Count == 0 || result[^1] != segmentStart)
+            {
+                result.Add(segmentStart);
+            }
+
+            // 然后按小节间隔继续生成直到下一事件或结束时间
+            float t = segmentStart + measureMs;
+            while (t <= segmentEnd)
+            {
+                result.Add(t);
+                t += measureMs;
+            }
+        }
+
+        return result;
     }
 
     public static Vector2 PivotMiddle(Vector2 pivotTopLeft)

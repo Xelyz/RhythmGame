@@ -58,7 +58,7 @@ public class Setting : MonoBehaviour
 
     void SetNoteSpeed(float value)
     {
-        value = Mathf.Clamp(value, 1f, 10f);
+        value = Mathf.Clamp(value, 10f, 100f);
         Values.Preference.noteSpeed = value;
         noteSpeedValue.text = (value / 10).ToString("F1");
         noteSpeedSlider.value = value;

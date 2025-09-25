@@ -1,17 +1,18 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BarlineManager : MonoBehaviour
 {
     private Transform noteHolder;
-    private int nextBarlineTimeMs;
-    private int measureMs;
+    private List<float> barlineTimestamps;
+    private int nextIndex;
     private bool initialized = false;
 
-    public void Init(Transform holder, float beatIntervalMs)
+    public void Init(Transform holder, List<float> timestamps)
     {
         noteHolder = holder;
-        measureMs = Mathf.RoundToInt(beatIntervalMs * 4f);
-        nextBarlineTimeMs = 0;
+        barlineTimestamps = timestamps ?? new List<float>();
+        nextIndex = 0;
         initialized = true;
     }
 
@@ -19,16 +20,17 @@ public class BarlineManager : MonoBehaviour
     {
         if (!initialized || GameManager.Instance == null) return;
         if (!GameManager.Instance.gameState.IsPlaying) return;
+        if (nextIndex >= barlineTimestamps.Count) return;
 
-        int current = GameManager.Instance.gameState.CurrentTime;
-        while (current >= nextBarlineTimeMs - Values.spawnTime)
+        float current = GameManager.Instance.gameState.CurrentTime;
+        while (nextIndex < barlineTimestamps.Count && current >= barlineTimestamps[nextIndex] - Values.spawnTime)
         {
-            SpawnBarline(nextBarlineTimeMs);
-            nextBarlineTimeMs += measureMs;
+            SpawnBarline(barlineTimestamps[nextIndex]);
+            nextIndex++;
         }
     }
 
-    private void SpawnBarline(int targetTimeMs)
+    private void SpawnBarline(float targetTimeMs)
     {
         GameObject go = new("BarLine");
         go.transform.SetParent(noteHolder);
@@ -67,11 +69,16 @@ public class BarlineManager : MonoBehaviour
         // 滚动设置
         NoteScroll scroll = go.AddComponent<NoteScroll>();
         scroll.isActive = true;
+        scroll.destroyOnArrival = true;
 
         float animationDuration = (targetTimeMs - GameManager.Instance.gameState.CurrentTime) / 1000f;
         Vector3 worldPos = go.transform.position;
         worldPos.z = Values.planeDistance + animationDuration * Values.Preference.NoteSpeed;
         go.transform.position = worldPos;
+
+		// debug log for z-index alignment check
+		Debug.Log(
+			$"SPAWN [BARLINE] target={targetTimeMs:F3}ms current={GameManager.Instance.gameState.CurrentTime:F3}ms anim={animationDuration:F3}s z={worldPos.z:F3} plane={Values.planeDistance} speed={Values.Preference.NoteSpeed} spawnTime={Values.spawnTime}");
     }
 }
 

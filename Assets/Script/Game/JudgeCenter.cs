@@ -35,9 +35,9 @@ public class JudgeCenter : MonoBehaviour
         }, false, 6, 10);
     }
 
-    public Judgment Judge(int timeDifference)
+    public Judgment Judge(float timeDifference)
     {
-        int time = System.Math.Abs(timeDifference);
+        float time = Mathf.Abs(timeDifference);
         if (time <= Values.perfectWindow)
         {
             return Judgment.Perfect;

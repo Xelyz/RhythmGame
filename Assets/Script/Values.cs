@@ -24,12 +24,12 @@ public static class Values
     public static float planeDistance = 5f;
     public static float fullTiltAngle = 45f;
     
-    // 时间窗口
-    public static int waitTime = 3000;
-    public static int spawnTime = 1500;
-    public static int perfectWindow = 60;
-    public static int goodWindow = 90;
-    public static int badWindow = 120;
+    // 时间窗口 (ms)
+    public static float waitTime = 3000f;
+    public static float spawnTime = 1500f;
+    public static float perfectWindow = 60f;
+    public static float goodWindow = 90f;
+    public static float badWindow = 120f;
 
     // 画布尺寸
     public static float canvasHalfHeight = 240f;
