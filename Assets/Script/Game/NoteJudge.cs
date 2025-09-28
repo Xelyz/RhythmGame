@@ -89,7 +89,7 @@ public class NoteJudge : MonoBehaviour
         if (judgmentQueue.Count == 0) return;
         
         float time = GameManager.Instance.gameState.CurrentTime;
-        Vector2 cursorPosition = DigitalLevel.Instance.GetPosition();
+        Vector2 cursorPosition = CursorControl.Instance.GetPosition();
         
         ProcessMissedNotes(time);
         
@@ -104,7 +104,7 @@ public class NoteJudge : MonoBehaviour
         float time = GameManager.Instance.gameState.CurrentTime;
 
         // 确保有目标位置 - 如果还没有设置目标，进行初始移动
-        if (!DigitalLevel.Instance.HasAutoplayTarget())
+        if (!CursorControl.Instance.HasAutoplayTarget())
         {
             AutoplayMoveToNext();
         }
@@ -130,7 +130,7 @@ public class NoteJudge : MonoBehaviour
                 scheduledAutoTap.Add(idx);
                 StartCoroutine(Util.DelayAction(() =>
                 {
-                    Vector2 pos = DigitalLevel.Instance.GetPosition();
+                    Vector2 pos = CursorControl.Instance.GetPosition();
                     if (Values.gridDebugLog)
                     {
                         Debug.Log($"[AUTO] Timed tap at {next.timeStamp:F1}ms noteIndex={idx}");
@@ -142,7 +142,7 @@ public class NoteJudge : MonoBehaviour
             {
                 // 已经过时，立即补点一次
                 scheduledAutoTap.Add(idx);
-                Vector2 pos = DigitalLevel.Instance.GetPosition();
+                Vector2 pos = CursorControl.Instance.GetPosition();
                 if (Values.gridDebugLog)
                 {
                     Debug.Log($"[AUTO] Late tap immediately dt={dt:F1}ms noteIndex={idx}");
@@ -160,7 +160,7 @@ public class NoteJudge : MonoBehaviour
         if (!PlayInfo.isAutoplay) return;
         
         float currentTime = GameManager.Instance.gameState.CurrentTime;
-        Vector2 cursor = DigitalLevel.Instance.GetPosition();
+        Vector2 cursor = CursorControl.Instance.GetPosition();
         Vector2Int cursorCell = Values.LocalToCellIndex(cursor);
         
         // 查找下一个目标音符
@@ -177,8 +177,8 @@ public class NoteJudge : MonoBehaviour
         const float arrivalMarginMs = 50f; // 提前50ms到达
         targetTimeMs -= arrivalMarginMs;
         
-        DigitalLevel.Instance.EnableAutoplayControl(true);
-        DigitalLevel.Instance.SetAutoplayTarget(targetPosition, targetTimeMs);
+        CursorControl.Instance.EnableAutoplayControl(true);
+        CursorControl.Instance.SetAutoplayTarget(targetPosition, targetTimeMs);
         
         if (Values.gridDebugLog)
         {

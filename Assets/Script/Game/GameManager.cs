@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
-using System.Reflection;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -48,7 +47,7 @@ public class GameManager : MonoBehaviour
         Transfer.sceneReady = true;
 
         StartCoroutine(GameStart());
-        StartCoroutine(Util.DelayAction(() => DigitalLevel.Instance.FadeInCircle(), 1f));
+        StartCoroutine(Util.DelayAction(() => CursorControl.Instance.FadeInCircle(), 1f));
     }
 
     private IEnumerator GameStart()
@@ -57,7 +56,7 @@ public class GameManager : MonoBehaviour
         // Autoplay: 启用外部控制（若开启）
         if (PlayInfo.isAutoplay)
         {
-            DigitalLevel.Instance.EnableAutoplayControl(true);
+            CursorControl.Instance.EnableAutoplayControl(true);
         }
 
         float elapsedTime = 0f;
@@ -132,7 +131,7 @@ public class GameManager : MonoBehaviour
     {
         while (ShouldSpawnNextNote())
         {
-            notes[nextNoteIndex].Initialize(noteHolder);
+            notes[nextNoteIndex].Initialize(NoteHolder);
             nextNoteIndex++;
         }
     }

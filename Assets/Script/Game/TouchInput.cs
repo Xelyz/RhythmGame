@@ -51,7 +51,7 @@ public class TouchInput : MonoBehaviour
     
     private void UpdateCursorPosition()
     {
-        cursorPos = DigitalLevel.Instance.GetPosition();
+        cursorPos = CursorControl.Instance.GetPosition();
     }
 
     private void ProcessTouch()
