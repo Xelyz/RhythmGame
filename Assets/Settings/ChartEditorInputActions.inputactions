@@ -1,0 +1,115 @@
+{
+    "version": 1,
+    "name": "ChartEditorInputActions",
+    "maps": [
+        {
+            "name": "ChartEditor",
+            "id": "4c3e8f2a-d4b3-4a5e-9f8c-1b2d3e4f5a6b",
+            "actions": [
+                {
+                    "name": "LeftClick",
+                    "type": "Button",
+                    "id": "5d4e3f2a-b5c6-4d7e-8f9a-2c3d4e5f6a7b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "RightClick",
+                    "type": "Button",
+                    "id": "6e5f4a3b-c6d7-5e8f-9a0b-3d4e5f6a7b8c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "RightHold",
+                    "type": "Button",
+                    "id": "7f6a5b4c-d7e8-6f9a-0b1c-4e5f6a7b8c9d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Hold",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MousePosition",
+                    "type": "Value",
+                    "id": "8a7b6c5d-e8f9-7a0b-1c2d-5f6a7b8c9d0e",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "TogglePlayback",
+                    "type": "Button",
+                    "id": "9b8c7d6e-f9a0-8b1c-2d3e-6a7b8c9d0e1f",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "0c9d8e7f-a0b1-9c2d-3e4f-7b8c9d0e1f2a",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LeftClick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1d0e9f8a-b1c2-0d3e-4f5a-8c9d0e1f2a3b",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RightClick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2e1f0a9b-c2d3-1e4f-5a6b-9d0e1f2a3b4c",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RightHold",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3f2a1b0c-d3e4-2f5a-6b7c-0e1f2a3b4c5d",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MousePosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4a3b2c1d-e4f5-3a6b-7c8d-1f2a3b4c5d6e",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TogglePlayback",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

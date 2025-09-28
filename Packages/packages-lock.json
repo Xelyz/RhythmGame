@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/UnityMcpBridge",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
+      },
+      "hash": "048b1252de3bff367cde234b397f99efc2be0c6b"
+    },
     "com.unity.2d.animation": {
       "version": "12.0.2",
       "depth": 1,
@@ -166,15 +175,6 @@
         "com.unity.adaptiveperformance": "5.1.6",
         "com.unity.mobile.notifications": "2.4.1"
       }
-    },
-    "com.unity.ide.rider": {
-      "version": "3.0.37",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.ext.nunit": "1.0.6"
-      },
-      "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
       "version": "2.0.23",

@@ -194,6 +194,8 @@ public static class Util
             }
         }
 
+        endTime += 1000f;
+
         for (int i = 0; i < bpmEvents.Count; i++)
         {
             float segmentStart = bpmEvents[i].t;

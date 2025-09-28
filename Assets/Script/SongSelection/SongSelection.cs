@@ -28,6 +28,7 @@ public class SongSelection : MonoBehaviour
     public void StartGame()
     {
         PlayInfo.isTutorial = false;
+        PlayInfo.isAutoplay = false;
         Util.Transition("GameScene");
     }
 

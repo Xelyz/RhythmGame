@@ -1581,6 +1581,7 @@ GameObject:
   - component: {fileID: 1078942954}
   - component: {fileID: 1078942953}
   - component: {fileID: 1078942956}
+  - component: {fileID: 1078942957}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -1657,6 +1658,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   judgeCenter: {fileID: 1078942954}
+--- !u!114 &1078942957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1078942950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd6fc726736544a32b50b55aad4d7c91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorControl
+  circle: {fileID: 707248340}
+  canvas: {fileID: 9184849}
+  smoothFactor: 0.8
+  showAutoplayDebugInfo: 0
+  trailStartColor: {r: 1, g: 1, b: 1, a: 1}
+  trailEndColor: {r: 1, g: 1, b: 1, a: 0}
+  trailTime: 0.2
+  trailWidthMultiplier: 1
+  isTesting: 0
+  testText: {fileID: 0}
 --- !u!1 &1214863811
 GameObject:
   m_ObjectHideFlags: 0
@@ -2601,15 +2624,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fc51bbe03ca04ab8abdc38894a3a602, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  circle: {fileID: 707248340}
-  canvas: {fileID: 9184849}
-  smoothFactor: 0.8
-  trailStartColor: {r: 0.6901961, g: 1, b: 0.53333336, a: 1}
-  trailEndColor: {r: 0.6901961, g: 1, b: 0.53333336, a: 0}
-  trailTime: 0.2
-  trailWidthMultiplier: 1
-  isTesting: 0
-  testText: {fileID: 0}
 --- !u!4 &1948918966
 Transform:
   m_ObjectHideFlags: 0
