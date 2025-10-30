@@ -165,6 +165,10 @@ public class AudioManager : MonoBehaviour
 
     public float CurrentTime => musicSource?.time ?? 0f;
 
+    public bool IsPlaying => musicSource != null && musicSource.isPlaying;
+
+    public AudioClip CurrentClip => musicSource?.clip;
+
     public void Play()
     {
         musicSource?.Play();
@@ -183,5 +187,21 @@ public class AudioManager : MonoBehaviour
     public void Stop()
     {
         musicSource?.Stop();
+    }
+
+    public void SetTime(float time)
+    {
+        if (musicSource != null)
+        {
+            musicSource.time = time;
+        }
+    }
+
+    public void SetClip(AudioClip clip)
+    {
+        if (musicSource != null)
+        {
+            musicSource.clip = clip;
+        }
     }
 }

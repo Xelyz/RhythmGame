@@ -5,9 +5,16 @@ using UnityEngine.UI;
 using System.IO;
 using System.Globalization;
 using UnityEngine.InputSystem;
+using UnityEngine.Networking;
 
 public class ChartEditor : MonoBehaviour
 {
+    // Constants
+    private const float TIME_THRESHOLD = 50f; // 查找音符的时间容差（毫秒）
+    private const float MAX_CHART_TIME = 600000f; // 最大谱面时间（10分钟，毫秒）
+    private const float CLEANUP_MARGIN = 500f; // 清理窗口的边距（毫秒）
+    private const float TIMELINE_DRAG_SENSITIVITY = 0.5f; // 时间轴拖拽灵敏度
+    
     [Header("UI References")]
     public RectTransform chartPreviewArea;
     public Slider timelineSlider;
@@ -26,31 +33,39 @@ public class ChartEditor : MonoBehaviour
     public Button exportButton;
     public Button newChartButton;
     
+    [Header("Difficulty Selection")]
+    public Dropdown difficultyDropdown;
+    
     [Header("Preview Settings")]
     public Transform noteHolder;
     
     [Header("Timeline Control")]
     public bool snapTo16thBeat = true;
-    public float currentTime = 0f; // 当前时间（毫秒）
+    public float currentTime = 0f;
     public float currentBPM = 120f;
     public float offset = 0f;
     
     // Chart data
     private Chart currentChart;
-    private List<Note> editorNotes = new List<Note>();
     private NoteType selectedNoteType = NoteType.Tap;
     private bool isPlaying = false;
     private bool isPaused = false;
     
+    // Preview display
+    private Dictionary<Note, GameObject> displayedNoteObjects = new Dictionary<Note, GameObject>();
+    private int nextNoteIndex = 0;
+    
     // Audio
     private AudioSource audioSource;
     private AudioManager audioManager;
+    private string audioFilePath;
+    private AudioClip loadedAudioClip;
+    private float maxChartTime = MAX_CHART_TIME; // 根据音频长度动态设置
     
-    // Grid and input
+    // Input
     private bool isDraggingTimeline = false;
     private Vector2 lastMousePosition;
     
-    // Input System
     [Header("Input System")]
     [SerializeField] private InputActionAsset inputActionAsset;
     private InputActionMap chartEditorMap;
@@ -60,6 +75,10 @@ public class ChartEditor : MonoBehaviour
     private InputAction mousePositionAction;
     private InputAction togglePlaybackAction;
     private Vector2 mousePosition;
+    
+    // Note type buttons for easy access
+    private Button[] noteTypeButtons;
+    private NoteType[] noteTypes = { NoteType.Tap, NoteType.Drag, NoteType.Block };
     
     public static ChartEditor Instance { get; private set; }
     
@@ -86,6 +105,7 @@ public class ChartEditor : MonoBehaviour
     
     void Start()
     {
+        noteTypeButtons = new[] { tapNoteButton, dragNoteButton, blockNoteButton };
         SetupUI();
         CreateNewChart();
         UpdateTimelineDisplay();
@@ -93,13 +113,8 @@ public class ChartEditor : MonoBehaviour
     
     void Update()
     {
-        // 更新鼠标位置
-        if (mousePositionAction != null)
-        {
-            mousePosition = mousePositionAction.ReadValue<Vector2>();
-        }
+        UpdateMousePosition();
         
-        // 处理拖拽时间轴
         if (isDraggingTimeline)
         {
             HandleTimelineDrag();
@@ -109,7 +124,17 @@ public class ChartEditor : MonoBehaviour
         {
             UpdatePlayback();
         }
+        
+        UpdatePreviewAtTime(currentTime);
         UpdateTimelineDisplay();
+    }
+    
+    void UpdateMousePosition()
+    {
+        if (mousePositionAction != null)
+        {
+            mousePosition = mousePositionAction.ReadValue<Vector2>();
+        }
     }
     
     void InitializeEditor()
@@ -120,20 +145,18 @@ public class ChartEditor : MonoBehaviour
             events = new List<ChartEvent>()
         };
         
-        // 确保AudioManager存在
         audioManager = FindAnyObjectByType<AudioManager>();
+        // 如果 AudioManager 不存在，尝试通过其他方式获取（编辑器兼容性）
         if (audioManager == null)
         {
-            GameObject audioGO = GameObject.Find("AudioManager");
-            if (audioGO != null)
+            GameObject audioManagerGO = GameObject.Find("AudioManager");
+            if (audioManagerGO != null)
             {
-                audioSource = audioGO.GetComponent<AudioSource>();
+                audioManager = audioManagerGO.GetComponent<AudioManager>();
             }
         }
-        else
-        {
-            audioSource = audioManager.musicSource;
-        }
+        // 保留 audioSource 引用用于直接访问（如果 AudioManager 不存在时）
+        audioSource = audioManager?.musicSource;
     }
     
     void InitializeInputSystem()
@@ -181,9 +204,12 @@ public class ChartEditor : MonoBehaviour
         blockNoteButton?.onClick.AddListener(() => SelectNoteType(NoteType.Block));
         
         // 文件操作
-        importButton?.onClick.AddListener(ImportChart);
+        importButton?.onClick.AddListener(ImportAudioAndChart);
         exportButton?.onClick.AddListener(ExportChart);
         newChartButton?.onClick.AddListener(CreateNewChart);
+        
+        // 难度选择框
+        SetupDifficultyDropdown();
         
         // BPM和Offset输入框
         if (bpmInput != null) 
@@ -204,18 +230,41 @@ public class ChartEditor : MonoBehaviour
         SelectNoteType(NoteType.Tap);
     }
     
+    void SetupDifficultyDropdown()
+    {
+        if (difficultyDropdown != null)
+        {
+            // 添加难度选项：0-3
+            difficultyDropdown.ClearOptions();
+            List<string> options = new List<string>();
+            for (int i = 0; i < 4; i++)
+            {
+                options.Add($"难度 {i}");
+            }
+            difficultyDropdown.AddOptions(options);
+            difficultyDropdown.value = 0;
+            difficultyDropdown.onValueChanged.AddListener(OnDifficultyChanged);
+        }
+    }
+    
+    void OnDifficultyChanged(int difficulty)
+    {
+        // 如果已经有音频文件，尝试加载对应难度的谱面
+        if (!string.IsNullOrEmpty(audioFilePath))
+        {
+            LoadChartForDifficulty(difficulty);
+        }
+    }
+    
     void SetButtonText(Button button, string text)
     {
-        if (button != null)
+        Text buttonText = button?.GetComponentInChildren<Text>();
+        if (buttonText != null)
         {
-            Text buttonText = button.GetComponentInChildren<Text>();
-            if (buttonText != null)
-            {
-                buttonText.text = text;
-                buttonText.fontSize = 14;
-                buttonText.color = Color.black;
-                buttonText.alignment = TextAnchor.MiddleCenter;
-            }
+            buttonText.text = text;
+            buttonText.fontSize = 14;
+            buttonText.color = Color.black;
+            buttonText.alignment = TextAnchor.MiddleCenter;
         }
     }
     
@@ -270,22 +319,23 @@ public class ChartEditor : MonoBehaviour
     void HandleTimelineDrag()
     {
         Vector2 currentMousePosition = mousePosition;
-        float deltaY = (currentMousePosition.y - lastMousePosition.y) * 0.5f; // 调整灵敏度
+        float deltaY = (currentMousePosition.y - lastMousePosition.y) * TIMELINE_DRAG_SENSITIVITY;
         
-        currentTime += deltaY;
+        currentTime = Mathf.Clamp(currentTime + deltaY, 0f, maxChartTime);
         
-        // 16分音符对齐
         if (snapTo16thBeat)
         {
-            float beatLength = 60000f / currentBPM; // 一拍的毫秒数
-            float sixteenthBeat = beatLength / 4f; // 16分音符长度
-            currentTime = Mathf.Round(currentTime / sixteenthBeat) * sixteenthBeat;
+            SnapToBeat(ref currentTime);
         }
         
-        currentTime = Mathf.Max(0, currentTime);
         lastMousePosition = currentMousePosition;
-        
-        UpdatePreviewAtTime(currentTime);
+    }
+    
+    void SnapToBeat(ref float time)
+    {
+        float beatLength = GetBeatLengthAtTime(time);
+        float sixteenthBeat = beatLength / 4f;
+        time = Mathf.Round(time / sixteenthBeat) * sixteenthBeat;
     }
     
     void ToggleNoteAtPosition(Vector2Int gridPos)
@@ -312,17 +362,10 @@ public class ChartEditor : MonoBehaviour
     
     Note FindNoteAt(float time, Vector2Int gridPos)
     {
-        const float timeThreshold = 50f; // 50ms的时间容差
-        
-        foreach (Note note in currentChart.notes)
-        {
-            if (Mathf.Abs(note.timeStamp - time) <= timeThreshold && 
-                note.cellIndex.x == gridPos.x && note.cellIndex.y == gridPos.y)
-            {
-                return note;
-            }
-        }
-        return null;
+        return currentChart.notes.Find(note =>
+            Mathf.Abs(note.timeStamp - time) <= TIME_THRESHOLD &&
+            note.cellIndex.x == gridPos.x &&
+            note.cellIndex.y == gridPos.y);
     }
     
     Note CreateNote(NoteType type, Vector2Int gridPos, float time)
@@ -346,28 +389,24 @@ public class ChartEditor : MonoBehaviour
     void AddNote(Note note)
     {
         currentChart.notes.Add(note);
-        // 按时间排序
         currentChart.notes.Sort((a, b) => a.timeStamp.CompareTo(b.timeStamp));
-        
-        // 重新分配nthNote
-        for (int i = 0; i < currentChart.notes.Count; i++)
-        {
-            currentChart.notes[i].nthNote = i + 1;
-        }
+        ReassignNthNotes();
     }
     
     void RemoveNote(Note note)
     {
-        if (currentChart.notes.Contains(note))
+        if (currentChart.notes.Remove(note))
         {
-            note.Release(); // 清理GameObject
-            currentChart.notes.Remove(note);
-            
-            // 重新分配nthNote
-            for (int i = 0; i < currentChart.notes.Count; i++)
-            {
-                currentChart.notes[i].nthNote = i + 1;
-            }
+            note.Release();
+            ReassignNthNotes();
+        }
+    }
+    
+    void ReassignNthNotes()
+    {
+        for (int i = 0; i < currentChart.notes.Count; i++)
+        {
+            currentChart.notes[i].nthNote = i + 1;
         }
     }
     
@@ -376,19 +415,32 @@ public class ChartEditor : MonoBehaviour
         selectedNoteType = type;
         
         // 更新按钮高亮显示
-        if (tapNoteButton != null) tapNoteButton.GetComponent<Image>().color = type == NoteType.Tap ? Color.yellow : Color.white;
-        if (dragNoteButton != null) dragNoteButton.GetComponent<Image>().color = type == NoteType.Drag ? Color.yellow : Color.white;
-        if (blockNoteButton != null) blockNoteButton.GetComponent<Image>().color = type == NoteType.Block ? Color.yellow : Color.white;
-        
-        Debug.Log($"选择note类型: {type}");
+        for (int i = 0; i < noteTypeButtons.Length && i < noteTypes.Length; i++)
+        {
+            if (noteTypeButtons[i] != null)
+            {
+                Image buttonImage = noteTypeButtons[i].GetComponent<Image>();
+                if (buttonImage != null)
+                {
+                    buttonImage.color = noteTypes[i] == type ? Color.yellow : Color.white;
+                }
+            }
+        }
     }
     
     void TogglePlayback()
     {
         if (isPlaying)
         {
-            // 暂停播放
-            audioSource?.Pause();
+            // 暂停播放 - 使用 AudioManager
+            if (audioManager != null)
+            {
+                audioManager.Pause();
+            }
+            else
+            {
+                audioSource?.Pause();
+            }
             isPlaying = false;
             isPaused = true;
             PlayInfo.isAutoplay = false;
@@ -397,21 +449,49 @@ public class ChartEditor : MonoBehaviour
         }
         else
         {
-            // 开始/恢复播放
-            if (audioSource != null && audioSource.clip != null)
+            // 开始/恢复播放 - 使用 AudioManager
+            AudioClip clip = audioManager != null ? audioManager.CurrentClip : audioSource?.clip;
+            if (clip != null)
             {
+                float startTime = Mathf.Max(0f, (currentTime - offset) / 1000f);
+                
+                // 检查是否超出音频长度
+                if (startTime >= clip.length)
+                {
+                    Debug.LogWarning("当前时间超出音频长度");
+                    return;
+                }
+                
                 if (isPaused)
                 {
                     // 恢复播放
-                    audioSource.UnPause();
+                    if (audioManager != null)
+                    {
+                        audioManager.UnPause();
+                    }
+                    else
+                    {
+                        audioSource?.UnPause();
+                    }
                     Debug.Log("恢复播放");
                 }
                 else
                 {
-                    // 从当前时间开始播放
-                    audioSource.time = (currentTime + offset) / 1000f; // 转换为秒
-                    audioSource.Play();
-                    Debug.Log("开始播放谱面预览");
+                    // 从当前时间开始播放，参照GameManager：减去offset
+                    if (audioManager != null)
+                    {
+                        audioManager.SetTime(startTime);
+                        audioManager.Play();
+                    }
+                    else
+                    {
+                        if (audioSource != null)
+                        {
+                            audioSource.time = startTime;
+                            audioSource.Play();
+                        }
+                    }
+                    Debug.Log($"开始播放谱面预览，时间: {startTime:F2}秒");
                 }
                 
                 isPlaying = true;
@@ -429,50 +509,197 @@ public class ChartEditor : MonoBehaviour
     
     void UpdatePlayback()
     {
-        if (audioSource != null && audioSource.isPlaying)
+        // 使用 AudioManager 检查播放状态和获取时间
+        bool isAudioPlaying = audioManager != null ? audioManager.IsPlaying : (audioSource != null && audioSource.isPlaying);
+        
+        if (isAudioPlaying)
         {
-            currentTime = audioSource.time * 1000f - offset; // 转换为毫秒并应用offset
+            // 参照GameManager的处理方式：使用 AudioManager.CurrentTime
+            float audioTime = audioManager != null ? audioManager.CurrentTime : (audioSource?.time ?? 0f);
+            currentTime = audioTime * 1000f + offset;
+            
+            // 检查是否播放到最大长度
+            if (currentTime >= maxChartTime)
+            {
+                StopPlayback();
+                return;
+            }
+            
             UpdatePreviewAtTime(currentTime);
         }
     }
     
+    void StopPlayback()
+    {
+        // 使用 AudioManager 停止播放
+        if (audioManager != null)
+        {
+            if (audioManager.IsPlaying)
+            {
+                audioManager.Stop();
+            }
+        }
+        else if (audioSource != null && audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
+        isPlaying = false;
+        isPaused = false;
+        PlayInfo.isAutoplay = false;
+        currentTime = maxChartTime;
+    }
+    
     void UpdatePreviewAtTime(float time)
     {
-        // 清理所有现有的note显示
-        ClearPreviewNotes();
+        // 清理超出范围的音符显示
+        CleanupNotesOutsideWindow(time);
         
-        // 显示当前时间点附近的notes
-        const float previewWindow = 2000f; // 显示前后2秒的notes
+        // 显示当前时间点附近的notes（只显示未来的音符）
+        float previewWindow = Values.spawnTime; // 使用游戏中的spawnTime作为预览窗口
         
-        foreach (Note note in currentChart.notes)
+        // 生成新音符（类似游戏中的SpawnNotes逻辑）
+        SpawnPreviewNotes(time, previewWindow);
+        
+        // 更新已显示音符的位置（卷轴效果）
+        UpdateNotePositions(time);
+    }
+    
+    void SpawnPreviewNotes(float currentTime, float previewWindow)
+    {
+        ValidateAndResetNoteIndex(currentTime, previewWindow);
+        
+        // 生成预览窗口内的音符
+        while (nextNoteIndex < currentChart.notes.Count)
         {
-            if (note.timeStamp >= time && note.timeStamp <= time + previewWindow)
+            Note note = currentChart.notes[nextNoteIndex];
+            
+            if (note.timeStamp > currentTime + previewWindow)
+                break;
+            
+            if (note.timeStamp >= currentTime - CLEANUP_MARGIN && 
+                note.timeStamp <= currentTime + previewWindow &&
+                !displayedNoteObjects.ContainsKey(note))
             {
-                // 在编辑器中显示note（静态显示，不需要动画）
-                ShowNoteInPreview(note, time);
+                ShowNoteInPreview(note, currentTime);
+            }
+            
+            nextNoteIndex++;
+        }
+    }
+    
+    void ValidateAndResetNoteIndex(float currentTime, float previewWindow)
+    {
+        // 索引超出范围或时间回退太多时重置
+        if (nextNoteIndex >= currentChart.notes.Count ||
+            (nextNoteIndex > 0 && nextNoteIndex < currentChart.notes.Count &&
+             currentTime < currentChart.notes[nextNoteIndex].timeStamp - previewWindow - 1000f))
+        {
+            // 找到第一个应该在预览窗口内的音符
+            nextNoteIndex = 0;
+            for (int i = 0; i < currentChart.notes.Count; i++)
+            {
+                if (currentChart.notes[i].timeStamp >= currentTime - Values.spawnTime)
+                {
+                    nextNoteIndex = Mathf.Max(0, i - 1);
+                    break;
+                }
             }
         }
     }
     
     void ShowNoteInPreview(Note note, float currentTime)
     {
-        // 这里需要实现note的可视化显示
-        // 可以创建简单的UI图标或使用游戏中的note prefab
-        // 暂时用Debug可视化替代
-        if (Mathf.Abs(note.timeStamp - currentTime) < 100f) // 当前时间点的notes高亮显示
+        if (noteHolder == null || displayedNoteObjects.ContainsKey(note))
+            return;
+        
+        note.Initialize(noteHolder);
+        
+        if (note is Tap tapNote && tapNote.gameObject != null)
         {
-            Debug.Log($"当前时间点note: {note.type} at ({note.cellIndex.x},{note.cellIndex.y})");
+            displayedNoteObjects[note] = tapNote.gameObject;
+            
+            // 禁用自动滚动
+            if (tapNote.circle != null)
+            {
+                NoteScroll scroll = tapNote.circle.gameObject.GetComponent<NoteScroll>();
+                if (scroll != null) scroll.isActive = false;
+                
+                // 设置初始Z位置
+                UpdateNoteZPosition(tapNote.circle.transform, note.timeStamp - currentTime);
+            }
+        }
+    }
+    
+    void UpdateNoteZPosition(Transform noteTransform, float timeUntilNote)
+    {
+        Vector3 pos = noteTransform.position;
+        pos.z = Values.planeDistance + (timeUntilNote / 1000f) * Values.Preference.NoteSpeed;
+        noteTransform.position = pos;
+    }
+    
+    void UpdateNotePositions(float currentTime)
+    {
+        foreach (var kvp in displayedNoteObjects)
+        {
+            if (kvp.Value == null) continue;
+            
+            Note note = kvp.Key;
+            if (note is Tap tapNote && tapNote.circle != null)
+            {
+                UpdateNoteZPosition(tapNote.circle.transform, note.timeStamp - currentTime);
+            }
+        }
+    }
+    
+    void CleanupNotesOutsideWindow(float currentTime)
+    {
+        float cleanupWindow = Values.spawnTime + CLEANUP_MARGIN;
+        List<Note> notesToRemove = new List<Note>();
+        
+        foreach (var kvp in displayedNoteObjects)
+        {
+            Note note = kvp.Key;
+            if (note.timeStamp < currentTime - CLEANUP_MARGIN || note.timeStamp > currentTime + cleanupWindow)
+            {
+                notesToRemove.Add(note);
+            }
+        }
+        
+        foreach (Note note in notesToRemove)
+        {
+            note.Release();
+            displayedNoteObjects.Remove(note);
+        }
+        
+        if (notesToRemove.Count > 0)
+        {
+            ResetNoteIndex(currentTime);
+        }
+    }
+    
+    void ResetNoteIndex(float currentTime)
+    {
+        nextNoteIndex = 0;
+        for (int i = 0; i < currentChart.notes.Count; i++)
+        {
+            if (currentChart.notes[i].timeStamp >= currentTime - Values.spawnTime)
+            {
+                nextNoteIndex = i;
+                break;
+            }
         }
     }
     
     void ClearPreviewNotes()
     {
         // 清理所有预览中的note显示
-        foreach (Note note in editorNotes)
+        foreach (var kvp in displayedNoteObjects)
         {
+            Note note = kvp.Key;
             note.Release();
         }
-        editorNotes.Clear();
+        displayedNoteObjects.Clear();
+        nextNoteIndex = 0;
     }
     
     void RefreshPreview()
@@ -489,15 +716,15 @@ public class ChartEditor : MonoBehaviour
         
         if (currentBeatText != null)
         {
-            float beatLength = 60000f / currentBPM;
+            // 参照游戏中的BPM处理，从ChartEvent中获取beatLength
+            float beatLength = GetBeatLengthAtTime(currentTime);
             float currentBeat = currentTime / beatLength;
             currentBeatText.text = $"拍子: {currentBeat:F2}";
         }
         
         if (timelineSlider != null && !isDraggingTimeline)
         {
-            // 假设最大时间为10分钟
-            timelineSlider.value = currentTime / 600000f;
+            timelineSlider.value = maxChartTime > 0 ? currentTime / maxChartTime : 0;
         }
     }
     
@@ -505,12 +732,11 @@ public class ChartEditor : MonoBehaviour
     {
         if (!isDraggingTimeline && !isPlaying)
         {
-            currentTime = value * 600000f; // 最大10分钟
+            currentTime = value * maxChartTime;
+            currentTime = Mathf.Clamp(currentTime, 0f, maxChartTime);
             if (snapTo16thBeat)
             {
-                float beatLength = 60000f / currentBPM;
-                float sixteenthBeat = beatLength / 4f;
-                currentTime = Mathf.Round(currentTime / sixteenthBeat) * sixteenthBeat;
+                SnapToBeat(ref currentTime);
             }
             UpdatePreviewAtTime(currentTime);
         }
@@ -541,7 +767,7 @@ public class ChartEditor : MonoBehaviour
             currentChart.events = new List<ChartEvent>();
         }
         
-        // 查找并更新初始BPM事件
+        // 查找并更新初始BPM事件（参照Util.GetChart的处理方式）
         ChartEvent bpmEvent = currentChart.events.Find(e => e.type == "bpm" && e.timeStamp == 0);
         if (bpmEvent == null)
         {
@@ -549,7 +775,7 @@ public class ChartEditor : MonoBehaviour
             {
                 timeStamp = 0,
                 type = "bpm",
-                data = (60000f / currentBPM).ToString(CultureInfo.InvariantCulture)
+                data = (60000f / currentBPM).ToString(CultureInfo.InvariantCulture) // beatLength in ms
             };
             currentChart.events.Add(bpmEvent);
         }
@@ -559,10 +785,44 @@ public class ChartEditor : MonoBehaviour
         }
     }
     
+    float GetBeatLengthAtTime(float time)
+    {
+        if (currentChart.events == null || currentChart.events.Count == 0)
+            return 60000f / currentBPM;
+        
+        // 找到当前时间点之前最近的BPM事件
+        ChartEvent latestBPMEvent = null;
+        foreach (var ev in currentChart.events)
+        {
+            if (ev.type == "bpm" && ev.timeStamp <= time)
+            {
+                if (latestBPMEvent == null || ev.timeStamp > latestBPMEvent.timeStamp)
+                {
+                    latestBPMEvent = ev;
+                }
+            }
+        }
+        
+        if (latestBPMEvent != null &&
+            float.TryParse(latestBPMEvent.data, NumberStyles.Float, CultureInfo.InvariantCulture, out float beatLength))
+        {
+            return Mathf.Max(1f, beatLength);
+        }
+        
+        return 60000f / currentBPM;
+    }
+    
     void CreateNewChart()
     {
-        // 停止播放
-        audioSource?.Stop();
+        // 停止播放 - 使用 AudioManager
+        if (audioManager != null)
+        {
+            audioManager.Stop();
+        }
+        else
+        {
+            audioSource?.Stop();
+        }
         isPlaying = false;
         isPaused = false;
         PlayInfo.isAutoplay = false;
@@ -579,56 +839,215 @@ public class ChartEditor : MonoBehaviour
         currentBPM = 120f;
         offset = 0f;
         
+        // 如果有音频文件，使用音频长度作为最大时间
+        if (loadedAudioClip != null)
+        {
+            maxChartTime = loadedAudioClip.length * 1000f;
+        }
+        else
+        {
+            maxChartTime = MAX_CHART_TIME;
+        }
+        
         UpdateBPMInChart();
         RefreshPreview();
         
         Debug.Log("创建新谱面");
     }
     
-    void ImportChart()
+    void ImportAudioAndChart()
     {
-        // 这里实现从txt文件导入谱面的逻辑
-        string filePath = Application.streamingAssetsPath + "/charts/import.txt";
+        // 打开文件选择器选择音频文件
+        string selectedFilePath = OpenFileDialog("选择音频文件", GetAudioFileExtensions());
         
-        if (File.Exists(filePath))
+        if (string.IsNullOrEmpty(selectedFilePath) || !File.Exists(selectedFilePath))
         {
-            try
-            {
-                string chartData = File.ReadAllText(filePath);
-                currentChart = Util.GetChart(chartData);
-                currentTime = 0f;
-                RefreshPreview();
-                Debug.Log($"导入谱面成功: {currentChart.notes.Count} notes, {currentChart.events.Count} events");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"导入谱面失败: {e.Message}");
-            }
+            Debug.LogWarning("未选择有效的音频文件");
+            return;
+        }
+        
+        StartCoroutine(LoadAudioAndChart(selectedFilePath));
+    }
+    
+    string OpenFileDialog(string title, string extensions)
+    {
+        // Unity运行时文件选择器实现
+        // 在不同平台使用不同的方法
+#if UNITY_EDITOR
+        return UnityEditor.EditorUtility.OpenFilePanel(title, "", extensions);
+#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
+        // 运行时可以使用第三方库，这里先使用简单的路径输入
+        Debug.LogWarning("运行时文件选择器需要实现，请手动输入文件路径");
+        // 可以添加一个输入框让用户输入路径
+        return "";
+#else
+        Debug.LogWarning("当前平台不支持文件选择器");
+        return "";
+#endif
+    }
+    
+    string GetAudioFileExtensions()
+    {
+        return "mp3;wav;ogg;m4a;aac";
+    }
+    
+    IEnumerator LoadAudioAndChart(string audioPath)
+    {
+        audioFilePath = audioPath;
+        
+        // 加载音频文件
+        yield return StartCoroutine(LoadAudioClip(audioPath));
+        
+        if (loadedAudioClip == null)
+        {
+            Debug.LogError("音频文件加载失败");
+            yield break;
+        }
+        
+        // 设置音频源 - 使用 AudioManager
+        if (audioManager != null)
+        {
+            // 使用 AudioManager 的 musicSource
+            audioManager.SetClip(loadedAudioClip);
+            audioSource = audioManager.musicSource;
         }
         else
         {
-            Debug.LogWarning($"导入文件不存在: {filePath}");
+            // 如果 AudioManager 不存在，创建临时 AudioSource（编辑器兼容性）
+            if (audioSource == null)
+            {
+                GameObject audioGO = new GameObject("EditorAudioSource");
+                audioSource = audioGO.AddComponent<AudioSource>();
+                DontDestroyOnLoad(audioGO);
+            }
+            audioSource.clip = loadedAudioClip;
+        }
+        
+        maxChartTime = loadedAudioClip.length * 1000f; // 转换为毫秒
+        
+        // 加载对应难度的谱面文件
+        int difficulty = difficultyDropdown != null ? difficultyDropdown.value : 0;
+        LoadChartForDifficulty(difficulty);
+    }
+    
+    IEnumerator LoadAudioClip(string path)
+    {
+        string fileUrl = "file://" + path;
+        AudioType audioType = GetAudioTypeFromPath(path);
+
+        using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(fileUrl, audioType);
+        yield return www.SendWebRequest();
+
+        if (www.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"加载音频失败: {www.error}");
+            yield break;
+        }
+
+        loadedAudioClip = DownloadHandlerAudioClip.GetContent(www);
+        while (loadedAudioClip.loadState != AudioDataLoadState.Loaded)
+        {
+            yield return null;
+        }
+
+        Debug.Log($"音频加载成功: {loadedAudioClip.name}, 长度: {loadedAudioClip.length}秒");
+    }
+    
+    AudioType GetAudioTypeFromPath(string path)
+    {
+        string extension = Path.GetExtension(path).ToLower();
+        return extension switch
+        {
+            ".mp3" => AudioType.MPEG,
+            ".wav" => AudioType.WAV,
+            ".ogg" => AudioType.OGGVORBIS,
+            ".m4a" => AudioType.MPEG,
+            ".aac" => AudioType.MPEG,
+            _ => AudioType.UNKNOWN
+        };
+    }
+    
+    void LoadChartForDifficulty(int difficulty)
+    {
+        if (string.IsNullOrEmpty(audioFilePath))
+        {
+            Debug.LogWarning("未选择音频文件");
+            return;
+        }
+        
+        // 获取音频文件所在目录
+        string audioDirectory = Path.GetDirectoryName(audioFilePath);
+        string chartFileName = $"chart_{difficulty}.txt";
+        string chartPath = Path.Combine(audioDirectory, chartFileName);
+        
+        if (!File.Exists(chartPath))
+        {
+            Debug.LogWarning($"谱面文件不存在: {chartPath}，将创建新谱面");
+            CreateNewChart();
+            return;
+        }
+        
+        try
+        {
+            string chartData = File.ReadAllText(chartPath);
+            currentChart = Util.GetChart(chartData);
+            
+            // 从导入的谱面中获取初始BPM
+            LoadInitialBPMFromChart();
+            
+            // 重置预览状态
+            ClearPreviewNotes();
+            currentTime = 0f;
+            nextNoteIndex = 0;
+            
+            RefreshPreview();
+            Debug.Log($"导入谱面成功: {currentChart.notes.Count} notes, {currentChart.events.Count} events, 难度: {difficulty}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"导入谱面失败: {e.Message}");
+        }
+    }
+    
+    void LoadInitialBPMFromChart()
+    {
+        if (currentChart.events == null || currentChart.events.Count == 0)
+            return;
+        
+        ChartEvent initialBPM = currentChart.events.Find(e => e.type == "bpm" && e.timeStamp == 0);
+        if (initialBPM != null &&
+            float.TryParse(initialBPM.data, NumberStyles.Float, CultureInfo.InvariantCulture, out float beatLength))
+        {
+            currentBPM = 60000f / beatLength;
+            if (bpmInput != null) bpmInput.text = currentBPM.ToString();
         }
     }
     
     void ExportChart()
     {
-        // 实现导出谱面到txt文件的逻辑
-        string filePath = Application.streamingAssetsPath + "/charts/export.txt";
+        if (string.IsNullOrEmpty(audioFilePath))
+        {
+            Debug.LogWarning("未选择音频文件，无法确定保存路径");
+            return;
+        }
+        
+        int difficulty = difficultyDropdown != null ? difficultyDropdown.value : 0;
+        string audioDirectory = Path.GetDirectoryName(audioFilePath);
+        string chartFileName = $"chart_{difficulty}.txt";
+        string chartPath = Path.Combine(audioDirectory, chartFileName);
         
         try
         {
             string chartData = ConvertChartToText();
             
             // 确保目录存在
-            string directory = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(directory))
+            if (!Directory.Exists(audioDirectory))
             {
-                Directory.CreateDirectory(directory);
+                Directory.CreateDirectory(audioDirectory);
             }
             
-            File.WriteAllText(filePath, chartData);
-            Debug.Log($"导出谱面成功: {filePath}");
+            File.WriteAllText(chartPath, chartData);
+            Debug.Log($"导出谱面成功: {chartPath}");
         }
         catch (System.Exception e)
         {
