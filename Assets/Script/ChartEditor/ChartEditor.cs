@@ -14,6 +14,7 @@ public class ChartEditor : MonoBehaviour
     private const float MAX_CHART_TIME = 600000f; // 最大谱面时间（10分钟，毫秒）
     private const float CLEANUP_MARGIN = 500f; // 清理窗口的边距（毫秒）
     private const float TIMELINE_DRAG_SENSITIVITY = 0.5f; // 时间轴拖拽灵敏度
+    private const float AUTO_SAVE_INTERVAL = 30f; // 自动保存间隔（秒）
     
     [Header("UI References")]
     public RectTransform chartPreviewArea;
@@ -66,6 +67,10 @@ public class ChartEditor : MonoBehaviour
     private bool isDraggingTimeline = false;
     private Vector2 lastMousePosition;
     
+    // Auto save
+    private int currentDifficulty = 0; // 当前难度，用于追踪难度变化
+    private Coroutine autoSaveCoroutine;
+    
     [Header("Input System")]
     [SerializeField] private InputActionAsset inputActionAsset;
     private InputActionMap chartEditorMap;
@@ -89,7 +94,7 @@ public class ChartEditor : MonoBehaviour
         InitializeInputSystem();
     }
     
-    void OnDestroy()
+    void OnDisable()
     {
         if (chartEditorMap != null)
         {
@@ -109,6 +114,21 @@ public class ChartEditor : MonoBehaviour
         SetupUI();
         CreateNewChart();
         UpdateTimelineDisplay();
+        
+        // 启动自动保存协程
+        StartAutoSave();
+    }
+    
+    void OnDestroy()
+    {
+        // 停止自动保存
+        StopAutoSave();
+        
+        // 在销毁前保存当前谱面
+        if (!string.IsNullOrEmpty(audioFilePath))
+        {
+            SaveChartForCurrentDifficulty();
+        }
     }
     
     void Update()
@@ -210,6 +230,7 @@ public class ChartEditor : MonoBehaviour
         
         // 难度选择框
         SetupDifficultyDropdown();
+        currentDifficulty = difficultyDropdown != null ? difficultyDropdown.value : 0;
         
         // BPM和Offset输入框
         if (bpmInput != null) 
@@ -249,10 +270,23 @@ public class ChartEditor : MonoBehaviour
     
     void OnDifficultyChanged(int difficulty)
     {
-        // 如果已经有音频文件，尝试加载对应难度的谱面
+        // 如果已经有音频文件，先保存当前难度的谱面，然后加载新难度的谱面
         if (!string.IsNullOrEmpty(audioFilePath))
         {
+            // 保存当前难度的谱面（防止丢失）
+            // 注意：这里保存的是切换前的难度（currentDifficulty），而不是dropdown的新值
+            SaveChartForDifficulty(currentDifficulty);
+            
+            // 更新当前难度
+            currentDifficulty = difficulty;
+            
+            // 加载新难度的谱面
             LoadChartForDifficulty(difficulty);
+        }
+        else
+        {
+            // 如果没有音频文件，只更新难度记录
+            currentDifficulty = difficulty;
         }
     }
     
@@ -927,7 +961,11 @@ public class ChartEditor : MonoBehaviour
         
         // 加载对应难度的谱面文件
         int difficulty = difficultyDropdown != null ? difficultyDropdown.value : 0;
+        currentDifficulty = difficulty;
         LoadChartForDifficulty(difficulty);
+        
+        // 重新启动自动保存（因为音频文件已加载）
+        StartAutoSave();
     }
     
     IEnumerator LoadAudioClip(string path)
@@ -1032,6 +1070,18 @@ public class ChartEditor : MonoBehaviour
         }
         
         int difficulty = difficultyDropdown != null ? difficultyDropdown.value : 0;
+        SaveChartForDifficulty(difficulty);
+    }
+    
+    // 保存指定难度的谱面（通用保存方法）
+    void SaveChartForDifficulty(int difficulty)
+    {
+        if (string.IsNullOrEmpty(audioFilePath))
+        {
+            Debug.LogWarning("未选择音频文件，无法确定保存路径");
+            return;
+        }
+        
         string audioDirectory = Path.GetDirectoryName(audioFilePath);
         string chartFileName = $"chart_{difficulty}.txt";
         string chartPath = Path.Combine(audioDirectory, chartFileName);
@@ -1047,11 +1097,53 @@ public class ChartEditor : MonoBehaviour
             }
             
             File.WriteAllText(chartPath, chartData);
-            Debug.Log($"导出谱面成功: {chartPath}");
+            Debug.Log($"保存谱面成功: {chartPath}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"导出谱面失败: {e.Message}");
+            Debug.LogError($"保存谱面失败: {e.Message}");
+        }
+    }
+    
+    // 保存当前难度的谱面
+    void SaveChartForCurrentDifficulty()
+    {
+        int difficulty = difficultyDropdown != null ? difficultyDropdown.value : currentDifficulty;
+        SaveChartForDifficulty(difficulty);
+    }
+    
+    // 启动自动保存协程
+    void StartAutoSave()
+    {
+        StopAutoSave(); // 先停止现有的协程（如果有）
+        if (!string.IsNullOrEmpty(audioFilePath))
+        {
+            autoSaveCoroutine = StartCoroutine(AutoSaveCoroutine());
+        }
+    }
+    
+    // 停止自动保存协程
+    void StopAutoSave()
+    {
+        if (autoSaveCoroutine != null)
+        {
+            StopCoroutine(autoSaveCoroutine);
+            autoSaveCoroutine = null;
+        }
+    }
+    
+    // 自动保存协程
+    IEnumerator AutoSaveCoroutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(AUTO_SAVE_INTERVAL);
+            
+            // 只在有音频文件且谱面不为空时自动保存
+            if (!string.IsNullOrEmpty(audioFilePath) && currentChart != null && currentChart.notes.Count > 0)
+            {
+                SaveChartForCurrentDifficulty();
+            }
         }
     }
     
