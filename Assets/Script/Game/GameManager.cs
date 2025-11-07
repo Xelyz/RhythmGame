@@ -26,15 +26,60 @@ public class GameManager : MonoBehaviour
         gameUI = FindFirstObjectByType<GameUI>();
         
         spawnTime = Values.spawnTime;
+    }
 
-        LoadChart();
-        gameUI.SetBackground(PlayInfo.meta.id);
-        StartCoroutine(audioManager.InitGameMusic(PlayInfo.meta.id));
+    private void OnEnable()
+    {
+        // 每次启用时重新初始化（支持多次开启/关闭预览）
+        if (PlayInfo.meta != null)
+        {
+            LoadChart();
+            // GameUI 会在自己的 OnEnable 中设置背景
+            if (audioManager != null)
+            {
+                StartCoroutine(audioManager.InitGameMusic(PlayInfo.meta.id));
+            }
+            StartCoroutine(WaitForComponentsReady());
+        }
+        else
+        {
+            Debug.LogWarning("GameManager: PlayInfo.meta is null, cannot initialize game.");
+        }
+    }
+
+    private void OnDisable()
+    {
+        // 清理状态，为下次启用做准备
+        StopAllCoroutines();
+        nextNoteIndex = 0;
+        notes.Clear();
+        
+        // 清理小节线管理器
+        BarlineManager barlineManager = FindFirstObjectByType<BarlineManager>();
+        if (barlineManager != null)
+        {
+            Destroy(barlineManager.gameObject);
+        }
+        
+        // 重置游戏状态
+        if (gameState != null)
+        {
+            gameState.EndGame();
+            gameState.EndAudio();
+        }
+        
+        // 清理动画和音频
+        DOTween.KillAll();
+        if (audioManager != null)
+        {
+            audioManager.Stop();
+            audioManager.ClearMusic();
+        }
     }
 
     private void Start()
     {
-        StartCoroutine(WaitForComponentsReady());
+        // Start 中不再执行初始化逻辑，改为在 OnEnable 中执行
     }
 
     private IEnumerator WaitForComponentsReady()
@@ -214,13 +259,4 @@ public class GameManager : MonoBehaviour
         Util.Transition("ScoreScene");
     }
 
-    private void OnDisable()
-    {
-        // 确保清理所有动画和音频
-        DOTween.KillAll();
-        if (audioManager != null)
-        {
-            audioManager.Stop();
-        }
-    }
 }

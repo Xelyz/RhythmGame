@@ -15,12 +15,12 @@ public class TouchInput : MonoBehaviour
     }
 
     void Update()
-    {
-        InitializeInputData();
-        UpdateCursorPosition();
-        
+    {   
         if (!PlayInfo.isAutoplay)
         {
+            InitializeInputData();
+            UpdateCursorPosition();
+            
             if (Values.accAvail)
             {
                 ProcessTouch();

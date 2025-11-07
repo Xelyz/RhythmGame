@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using TMPro;
 using System.IO;
 using System.Globalization;
 using UnityEngine.InputSystem;
@@ -18,11 +20,12 @@ public class ChartEditor : MonoBehaviour
     
     [Header("UI References")]
     public RectTransform chartPreviewArea;
+    public ChartPreviewAreaHandler chartPreviewAreaHandler;
     public Slider timelineSlider;
-    public InputField bpmInput;
-    public InputField offsetInput;
-    public Text currentTimeText;
-    public Text currentBeatText;
+    public TMP_InputField bpmInput;
+    public TMP_InputField offsetInput;
+    public TextMeshProUGUI currentTimeText;
+    public TextMeshProUGUI currentBeatText;
     
     [Header("Note Type Selection")]
     public Button tapNoteButton;
@@ -35,10 +38,11 @@ public class ChartEditor : MonoBehaviour
     public Button newChartButton;
     
     [Header("Difficulty Selection")]
-    public Dropdown difficultyDropdown;
+    public TMP_Dropdown difficultyDropdown;
     
     [Header("Preview Settings")]
     public Transform noteHolder;
+    public GameObject previewGameManager; // 预览时使用的游戏管理器对象（包含AudioManager, NoteJudge等组件）
     
     [Header("Timeline Control")]
     public bool snapTo16thBeat = true;
@@ -63,9 +67,6 @@ public class ChartEditor : MonoBehaviour
     private AudioClip loadedAudioClip;
     private float maxChartTime = MAX_CHART_TIME; // 根据音频长度动态设置
     
-    // Input
-    private bool isDraggingTimeline = false;
-    private Vector2 lastMousePosition;
     
     // Auto save
     private int currentDifficulty = 0; // 当前难度，用于追踪难度变化
@@ -74,12 +75,7 @@ public class ChartEditor : MonoBehaviour
     [Header("Input System")]
     [SerializeField] private InputActionAsset inputActionAsset;
     private InputActionMap chartEditorMap;
-    private InputAction leftClickAction;
-    private InputAction rightClickAction;
-    private InputAction rightHoldAction;
-    private InputAction mousePositionAction;
     private InputAction togglePlaybackAction;
-    private Vector2 mousePosition;
     
     // Note type buttons for easy access
     private Button[] noteTypeButtons;
@@ -98,11 +94,6 @@ public class ChartEditor : MonoBehaviour
     {
         if (chartEditorMap != null)
         {
-            leftClickAction.performed -= OnLeftClick;
-            rightClickAction.performed -= OnRightClickStart;
-            rightClickAction.canceled -= OnRightClickEnd;
-            rightHoldAction.performed -= OnRightHold;
-            rightHoldAction.canceled -= OnRightHoldEnd;
             togglePlaybackAction.performed -= OnTogglePlayback;
             chartEditorMap.Disable();
         }
@@ -112,6 +103,7 @@ public class ChartEditor : MonoBehaviour
     {
         noteTypeButtons = new[] { tapNoteButton, dragNoteButton, blockNoteButton };
         SetupUI();
+        SetupChartPreviewAreaHandler();
         CreateNewChart();
         UpdateTimelineDisplay();
         
@@ -119,8 +111,37 @@ public class ChartEditor : MonoBehaviour
         StartAutoSave();
     }
     
+    void SetupChartPreviewAreaHandler()
+    {
+        // 如果没有手动指定 handler，尝试从 chartPreviewArea 获取
+        if (chartPreviewAreaHandler == null && chartPreviewArea != null)
+        {
+            chartPreviewAreaHandler = chartPreviewArea.GetComponent<ChartPreviewAreaHandler>();
+            
+            // 如果还没有，自动添加组件
+            if (chartPreviewAreaHandler == null)
+            {
+                chartPreviewAreaHandler = chartPreviewArea.gameObject.AddComponent<ChartPreviewAreaHandler>();
+            }
+        }
+        
+        // 订阅事件
+        if (chartPreviewAreaHandler != null)
+        {
+            chartPreviewAreaHandler.OnAreaClicked += HandleAreaClicked;
+            chartPreviewAreaHandler.OnTimeScroll += HandleTimeScroll;
+        }
+    }
+    
     void OnDestroy()
     {
+        // 取消订阅事件
+        if (chartPreviewAreaHandler != null)
+        {
+            chartPreviewAreaHandler.OnAreaClicked -= HandleAreaClicked;
+            chartPreviewAreaHandler.OnTimeScroll -= HandleTimeScroll;
+        }
+        
         // 停止自动保存
         StopAutoSave();
         
@@ -131,15 +152,27 @@ public class ChartEditor : MonoBehaviour
         }
     }
     
-    void Update()
+    // ChartPreviewAreaHandler 事件处理方法
+    void HandleAreaClicked(Vector2Int gridPos)
     {
-        UpdateMousePosition();
+        ToggleNoteAtPosition(gridPos);
+    }
+    
+    void HandleTimeScroll(float deltaTime)
+    {
+        // 调整时间轴
+        currentTime = Mathf.Clamp(currentTime + deltaTime, 0f, maxChartTime);
         
-        if (isDraggingTimeline)
+        if (snapTo16thBeat)
         {
-            HandleTimelineDrag();
+            SnapToBeat(ref currentTime);
         }
         
+        UpdatePreviewAtTime(currentTime);
+    }
+    
+    void Update()
+    {
         if (isPlaying && !isPaused)
         {
             UpdatePlayback();
@@ -147,14 +180,6 @@ public class ChartEditor : MonoBehaviour
         
         UpdatePreviewAtTime(currentTime);
         UpdateTimelineDisplay();
-    }
-    
-    void UpdateMousePosition()
-    {
-        if (mousePositionAction != null)
-        {
-            mousePosition = mousePositionAction.ReadValue<Vector2>();
-        }
     }
     
     void InitializeEditor()
@@ -177,6 +202,12 @@ public class ChartEditor : MonoBehaviour
         }
         // 保留 audioSource 引用用于直接访问（如果 AudioManager 不存在时）
         audioSource = audioManager?.musicSource;
+        
+        // 初始化autoplay模式（编辑器中默认始终为true）
+        PlayInfo.isAutoplay = true;
+        
+        // 初始时禁用预览游戏管理器
+        previewGameManager?.SetActive(false);
     }
     
     void InitializeInputSystem()
@@ -195,20 +226,14 @@ public class ChartEditor : MonoBehaviour
             return;
         }
         
-        // 获取各个输入动作
-        leftClickAction = chartEditorMap.FindAction("LeftClick");
-        rightClickAction = chartEditorMap.FindAction("RightClick");
-        rightHoldAction = chartEditorMap.FindAction("RightHold");
-        mousePositionAction = chartEditorMap.FindAction("MousePosition");
+        // 只保留播放控制相关的输入动作
         togglePlaybackAction = chartEditorMap.FindAction("TogglePlayback");
         
         // 设置回调函数
-        leftClickAction.performed += OnLeftClick;
-        rightClickAction.performed += OnRightClickStart;
-        rightClickAction.canceled += OnRightClickEnd;
-        rightHoldAction.performed += OnRightHold;
-        rightHoldAction.canceled += OnRightHoldEnd;
-        togglePlaybackAction.performed += OnTogglePlayback;
+        if (togglePlaybackAction != null)
+        {
+            togglePlaybackAction.performed += OnTogglePlayback;
+        }
         
         // 启用输入
         chartEditorMap.Enable();
@@ -260,7 +285,7 @@ public class ChartEditor : MonoBehaviour
             List<string> options = new List<string>();
             for (int i = 0; i < 4; i++)
             {
-                options.Add($"难度 {i}");
+                options.Add($"Difficulty {i}");
             }
             difficultyDropdown.AddOptions(options);
             difficultyDropdown.value = 0;
@@ -292,77 +317,21 @@ public class ChartEditor : MonoBehaviour
     
     void SetButtonText(Button button, string text)
     {
-        Text buttonText = button?.GetComponentInChildren<Text>();
+        TextMeshProUGUI buttonText = button?.GetComponentInChildren<TextMeshProUGUI>();
         if (buttonText != null)
         {
             buttonText.text = text;
             buttonText.fontSize = 14;
             buttonText.color = Color.black;
-            buttonText.alignment = TextAnchor.MiddleCenter;
+            buttonText.alignment = TextAlignmentOptions.Center;
         }
     }
     
     // Input System 事件处理方法
-    void OnLeftClick(InputAction.CallbackContext context)
-    {
-        HandleLeftClick();
-    }
-    
-    void OnRightClickStart(InputAction.CallbackContext context)
-    {
-        isDraggingTimeline = true;
-        lastMousePosition = mousePosition;
-    }
-    
-    void OnRightClickEnd(InputAction.CallbackContext context)
-    {
-        isDraggingTimeline = false;
-    }
-    
-    void OnRightHold(InputAction.CallbackContext context)
-    {
-        // 右键按住事件 - 在Update中处理拖拽
-    }
-    
-    void OnRightHoldEnd(InputAction.CallbackContext context)
-    {
-        isDraggingTimeline = false;
-    }
-    
+    // 注意：chartPreviewArea 的所有交互（点击、拖拽、滚轮）现在都由 ChartPreviewAreaHandler 处理
     void OnTogglePlayback(InputAction.CallbackContext context)
     {
         TogglePlayback();
-    }
-    
-    void HandleLeftClick()
-    {
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            chartPreviewArea, mousePosition, Camera.main, out Vector2 localPoint);
-        
-        // 转换为网格坐标
-        Vector2Int gridPos = Values.LocalToCellIndex(localPoint);
-        
-        // 检查是否在有效网格范围内
-        if (gridPos.x >= 0 && gridPos.x < Values.gridColumns && 
-            gridPos.y >= 0 && gridPos.y < Values.gridRows)
-        {
-            ToggleNoteAtPosition(gridPos);
-        }
-    }
-    
-    void HandleTimelineDrag()
-    {
-        Vector2 currentMousePosition = mousePosition;
-        float deltaY = (currentMousePosition.y - lastMousePosition.y) * TIMELINE_DRAG_SENSITIVITY;
-        
-        currentTime = Mathf.Clamp(currentTime + deltaY, 0f, maxChartTime);
-        
-        if (snapTo16thBeat)
-        {
-            SnapToBeat(ref currentTime);
-        }
-        
-        lastMousePosition = currentMousePosition;
     }
     
     void SnapToBeat(ref float time)
@@ -477,7 +446,9 @@ public class ChartEditor : MonoBehaviour
             }
             isPlaying = false;
             isPaused = true;
-            PlayInfo.isAutoplay = false;
+            
+            // 禁用预览游戏管理器
+            previewGameManager?.SetActive(false);
             
             Debug.Log("暂停播放");
         }
@@ -495,6 +466,12 @@ public class ChartEditor : MonoBehaviour
                     Debug.LogWarning("当前时间超出音频长度");
                     return;
                 }
+                
+                // 启用预览游戏管理器
+                previewGameManager?.SetActive(true);
+                
+                // 确保autoplay始终为true
+                PlayInfo.isAutoplay = true;
                 
                 if (isPaused)
                 {
@@ -530,9 +507,6 @@ public class ChartEditor : MonoBehaviour
                 
                 isPlaying = true;
                 isPaused = false;
-                
-                // 启用autoplay模式预览
-                PlayInfo.isAutoplay = true;
             }
             else
             {
@@ -579,8 +553,13 @@ public class ChartEditor : MonoBehaviour
         }
         isPlaying = false;
         isPaused = false;
-        PlayInfo.isAutoplay = false;
         currentTime = maxChartTime;
+        
+        // 禁用预览游戏管理器
+        previewGameManager?.SetActive(false);
+        
+        // autoplay在编辑器中始终保持为true
+        PlayInfo.isAutoplay = true;
     }
     
     void UpdatePreviewAtTime(float time)
@@ -745,18 +724,18 @@ public class ChartEditor : MonoBehaviour
     {
         if (currentTimeText != null)
         {
-            currentTimeText.text = $"时间: {currentTime:F0}ms";
+            currentTimeText.text = $"Current Time: {currentTime:F0}ms";
         }
-        
+
         if (currentBeatText != null)
         {
             // 参照游戏中的BPM处理，从ChartEvent中获取beatLength
             float beatLength = GetBeatLengthAtTime(currentTime);
             float currentBeat = currentTime / beatLength;
-            currentBeatText.text = $"拍子: {currentBeat:F2}";
+            currentBeatText.text = $"Current Beat: {currentBeat:F2}";
         }
         
-        if (timelineSlider != null && !isDraggingTimeline)
+        if (timelineSlider != null)
         {
             timelineSlider.value = maxChartTime > 0 ? currentTime / maxChartTime : 0;
         }
@@ -764,7 +743,7 @@ public class ChartEditor : MonoBehaviour
     
     void OnTimelineChanged(float value)
     {
-        if (!isDraggingTimeline && !isPlaying)
+        if (!isPlaying)
         {
             currentTime = value * maxChartTime;
             currentTime = Mathf.Clamp(currentTime, 0f, maxChartTime);
@@ -859,7 +838,12 @@ public class ChartEditor : MonoBehaviour
         }
         isPlaying = false;
         isPaused = false;
-        PlayInfo.isAutoplay = false;
+        
+        // 禁用预览游戏管理器
+        previewGameManager?.SetActive(false);
+        
+        // autoplay在编辑器中始终保持为true
+        PlayInfo.isAutoplay = true;
         
         ClearPreviewNotes();
         

@@ -10,6 +10,15 @@ public class GameUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI indicator;
     [SerializeField] private Image background;
 
+    private void OnEnable()
+    {
+        // 每次启用时设置背景（支持 PlayInfo 在 session 内变化）
+        if (PlayInfo.meta != null)
+        {
+            SetBackground(PlayInfo.meta.id);
+        }
+    }
+
     public void SetBackground(string songId)
     {
         Sprite jacket = Resources.Load<Sprite>($"songs/{songId}/jacket");

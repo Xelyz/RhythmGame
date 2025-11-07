@@ -26,18 +26,38 @@ public class NoteJudge : MonoBehaviour
         Instance = this;
     }
     
-    void Start()
+    void OnEnable()
     {
-        notes = GameManager.Instance.notes;
+        // 每次启用时重新获取 notes（支持多次开启/关闭预览）
+        if (GameManager.Instance != null)
+        {
+            notes = GameManager.Instance.notes;
+        }
         shakeEffects = FindObjectsByType<ShakeEffect>(FindObjectsSortMode.None).ToList();
+        
+        // 重置判定状态
+        pointer = 0;
+        judgmentQueue.Clear();
+        scheduledAutoTap.Clear();
         
         // 订阅输入事件
         InputEvent.OnInput += HandleInput;
     }
     
-    void OnDestroy()
+    void OnDisable()
     {
         // 取消订阅输入事件
+        InputEvent.OnInput -= HandleInput;
+        
+        // 清理状态
+        pointer = 0;
+        judgmentQueue.Clear();
+        scheduledAutoTap.Clear();
+    }
+    
+    void OnDestroy()
+    {
+        // 取消订阅输入事件（双重保险）
         InputEvent.OnInput -= HandleInput;
     }
     
