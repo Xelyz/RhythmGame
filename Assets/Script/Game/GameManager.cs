@@ -35,10 +35,8 @@ public class GameManager : MonoBehaviour
         {
             LoadChart();
             // GameUI 会在自己的 OnEnable 中设置背景
-            if (audioManager != null)
-            {
-                StartCoroutine(audioManager.InitGameMusic(PlayInfo.meta.id));
-            }
+            audioManager?.InitGameMusic(PlayInfo.meta.id);
+            
             StartCoroutine(WaitForComponentsReady());
         }
         else

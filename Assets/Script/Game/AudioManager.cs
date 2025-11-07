@@ -43,15 +43,35 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public IEnumerator InitGameMusic(string songFolderId)
+    /// <summary>
+    /// 初始化游戏音乐（同步函数，内部启动异步加载）
+    /// </summary>
+    /// <param name="songFolderId">歌曲文件夹ID</param>
+    public void InitGameMusic(string songFolderId)
     {
         if (musicSource == null)
         {
             Debug.LogError("AudioManager: Cannot init music, Music Source is missing!", gameObject);
-            yield break;
+            return;
         }
 
+        // 准备工作：设置状态和停止当前播放
         isAudioReady = false;
+        if (musicSource.isPlaying)
+        {
+            musicSource.Stop();
+        }
+        musicSource.clip = null;
+
+        // 启动异步加载协程
+        StartCoroutine(LoadGameMusicAsync(songFolderId));
+    }
+
+    /// <summary>
+    /// 异步加载游戏音乐的协程
+    /// </summary>
+    private IEnumerator LoadGameMusicAsync(string songFolderId)
+    {
         string path = $"songs/{songFolderId}/track";
         var request = Resources.LoadAsync<AudioClip>(path);
 
